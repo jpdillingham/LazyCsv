@@ -16,12 +16,14 @@
         {
             public Line(string text)
             {
-                Text = new ReadOnlyMemory<char>(text.ToCharArray());
+                Text = new Memory<char>(text.ToCharArray());
                 Offsets = new List<ColumnOffset>();
+
+                // todo: populate offsets
             }
 
             public List<ColumnOffset> Offsets;
-            public ReadOnlyMemory<char> Text;
+            public Memory<char> Text;
         }
 
         public List<string> Headers { get; } = new List<string>();
