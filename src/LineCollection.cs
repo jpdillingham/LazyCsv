@@ -1,12 +1,31 @@
 ﻿namespace LazyCsvFile
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
 
     public class LineCollection
     {
+        public struct ColumnOffset
+        {
+            public int Start;
+            public int Length;
+        }
+
+        public struct Line
+        {
+            public Line(string text)
+            {
+                Text = new ReadOnlyMemory<char>(text.ToCharArray());
+                Offsets = new List<ColumnOffset>();
+            }
+
+            public List<ColumnOffset> Offsets;
+            public ReadOnlyMemory<char> Text;
+        }
+
         public List<string> Headers { get; } = new List<string>();
-        public List<string> Lines { get; } = new List<string>();
+        public List<Line> Lines { get; } = new List<Line>();
 
         public void LoadFrom(string file)
         {
@@ -17,7 +36,7 @@
 
                 while (!reader.EndOfStream)
                 {
-                    Lines.Add(reader.ReadLine());
+                    Lines.Add(new Line(reader.ReadLine()));
                 }
             }
         }

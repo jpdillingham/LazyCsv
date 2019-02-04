@@ -4,15 +4,15 @@
 
     public class Program
     {
-        static LineCollection lines { get; } = new LineCollection();
+        static LineCollection Lines { get; } = new LineCollection();
 
         static void Main(string[] args)
         {
             Console.WriteLine($"Reading file...");
-            lines.LoadFrom(@"c:\file.csv");
+            Lines.LoadFrom(@"c:\file.csv");
             Console.WriteLine($"Done.");
 
-            Console.WriteLine($"Headers: {string.Join(", ", lines.Headers)}");
+            Console.WriteLine($"Headers: {string.Join(", ", Lines.Headers)}");
 
             Console.ReadKey();
         }
