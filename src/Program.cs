@@ -14,6 +14,11 @@
 
             Console.WriteLine($"Headers: {string.Join(", ", Lines.Headers)}");
 
+            for (int i = 0; i < 10; i++)
+            {
+                Console.WriteLine($"{i}: {Lines.Lines[i]["identity/LineItemId"]}");
+            }
+
             Console.ReadKey();
         }
     }
