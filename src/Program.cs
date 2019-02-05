@@ -16,7 +16,7 @@
             sw.Start();
 
             Console.WriteLine($"Reading file...");
-            var lines = new LineCollection(@"c:\CUR\file.csv");
+            var lines = new LineCollection(@"c:\CUR\bigfile.csv");
             Console.WriteLine($"Done.");
 
             sw.Stop();
@@ -26,16 +26,16 @@
             sw.Reset();
             sw.Start();
 
-            double sum = 0;
+            //double sum = 0;
 
-            var usageLines = lines.Where(l =>
-                l["lineItem/ProductCode"].ToString() == "AmazonEC2" &&
-                l["lineItem/UsageType"].ToString() == "EU-BoxUsage:t2.medium").ToList();
+            //var usageLines = lines.Where(l =>
+            //    l["lineItem/ProductCode"].ToString() == "AmazonEC2" &&
+            //    l["lineItem/UsageType"].ToString() == "EU-BoxUsage:t2.medium").ToList();
 
-            foreach (var line in usageLines)
-            {
-                sum += double.Parse(line["lineItem/UsageAmount"].ToString());
-            }
+            //foreach (var line in usageLines)
+            //{
+            //    sum += double.Parse(line["lineItem/UsageAmount"].ToString());
+            //}
 
             //for (int i = 0; i < lines.Count(); i++)
             //{
@@ -44,31 +44,33 @@
             //    line["identity/LineItemId"] = "a";
             //}
 
-            foreach (var line in usageLines)
+            for (int i = 0; i < 10; i++)
             {
-
+                foreach (var line in lines)
+                {
+                    line[0] = i.ToString("D3");
+                }
             }
-
 
 
             sw.Stop();
 
-            Console.WriteLine($"Iterated over {lines.Count()} lines of EC2 t2.medium usage with total usage {sum} in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"Iterated over {lines.Count()} lines in {sw.ElapsedMilliseconds}ms");
 
-            sw.Reset();
-            sw.Start();
+            //sw.Reset();
+            //sw.Start();
 
-            sum = 0;
+            //sum = 0;
 
-            foreach (var line in usageLines)
-            {
-                var val = line["lineItem/UsageAmount"].ToString();
-                sum += double.Parse(val);
-            }
+            //foreach (var line in usageLines)
+            //{
+            //    var val = line["lineItem/UsageAmount"].ToString();
+            //    sum += double.Parse(val);
+            //}
 
-            sw.Stop();
+            //sw.Stop();
 
-            Console.WriteLine($"Iterated over {usageLines.Count()} lines of EC2 t2.medium usage with total usage {sum} in {sw.ElapsedMilliseconds}ms");
+            //Console.WriteLine($"Iterated over {usageLines.Count()} lines of EC2 t2.medium usage with total usage {sum} in {sw.ElapsedMilliseconds}ms");
 
             sw.Reset();
             sw.Start();
@@ -77,6 +79,7 @@
             {
                 foreach (var line in lines)
                 {
+                    //Console.WriteLine(line);
                     writer.WriteLine(line);
                 }
             }
