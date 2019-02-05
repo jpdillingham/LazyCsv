@@ -4,6 +4,7 @@
     using System.Collections;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
 
     public struct Line
     {
@@ -60,6 +61,21 @@
         public string this[int i] => Lines[i].Text.ToString();
         public string this[int i, string column] => Lines[i][Headers[column]].ToString();
 
+        public LineCollection(string file)
+        {
+            using (var reader = new StreamReader(file))
+            {
+                Headers = reader.ReadLine().Split(',')
+                    .Select((x, i) => new KeyValuePair<string, int>(x, i))
+                    .ToDictionary(x => x.Key, x => x.Value);
+
+                while (!reader.EndOfStream)
+                {
+                    Lines.Add(new Line(reader.ReadLine(), Headers));
+                }
+            }
+        }
+
         public void Add(Line item)
         {
             ((IList<Line>)Lines).Add(item);
@@ -98,25 +114,6 @@
         public void Insert(int index, Line item)
         {
             ((IList<Line>)Lines).Insert(index, item);
-        }
-
-        public void LoadFrom(string file)
-        {
-            using (var reader = new StreamReader(file))
-            {
-                var headerLine = reader.ReadLine();
-                var headers = headerLine.Split(',');
-
-                for (int i = 0; i < headers.Length; i++)
-                {
-                    Headers.Add(headers[i], i);
-                }
-
-                while (!reader.EndOfStream)
-                {
-                    Lines.Add(new Line(reader.ReadLine(), Headers));
-                }
-            }
         }
 
         public bool Remove(Line item)
