@@ -9,18 +9,26 @@
     {
         static void Main(string[] args)
         {
-            Console.WriteLine($"Reading file...");
-            var lines = new LineCollection(@"c:\file.csv");
-            Console.WriteLine($"Done.");
-
-            Console.WriteLine($"Headers: {string.Join(", ", lines.Headers)}");
+            Stopwatch s = new Stopwatch();
+            s.Start();
 
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
+            Console.WriteLine($"Reading file...");
+            var lines = new LineCollection(@"c:\CUR\file.csv");
+            Console.WriteLine($"Done.");
+
+            sw.Stop();
+            Console.WriteLine($"Loaded file in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"Headers: {string.Join(", ", lines.Headers)}");
+
+            sw.Reset();
+            sw.Start();
+
             double sum = 0;
 
-            List<Line> usageLines = lines.Where(l =>
+            var usageLines = lines.Where(l =>
                 l["lineItem/ProductCode"].ToString() == "AmazonEC2" &&
                 l["lineItem/UsageType"].ToString() == "EU-BoxUsage:t2.medium").ToList();
 
@@ -29,15 +37,23 @@
                 sum += double.Parse(line["lineItem/UsageAmount"].ToString());
             }
 
-            for (int i = 0; i < usageLines.Count(); i++)
+            //for (int i = 0; i < lines.Count(); i++)
+            //{
+            //    var line = lines[i]; // inability to index this directly might be a bug
+            //    line["lineItem/UsageAmount"] = "10.0";
+            //    line["identity/LineItemId"] = "a";
+            //}
+
+            foreach (var line in usageLines)
             {
-                var line = usageLines[i]; // inability to index this directly might be a bug
-                line["lineItem/UsageAmount"] = "10.0";
+
             }
+
+
 
             sw.Stop();
 
-            Console.WriteLine($"Iterated over {usageLines.Count()} lines of EC2 t2.medium usage with total usage {sum} in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"Iterated over {lines.Count()} lines of EC2 t2.medium usage with total usage {sum} in {sw.ElapsedMilliseconds}ms");
 
             sw.Reset();
             sw.Start();
@@ -53,6 +69,23 @@
             sw.Stop();
 
             Console.WriteLine($"Iterated over {usageLines.Count()} lines of EC2 t2.medium usage with total usage {sum} in {sw.ElapsedMilliseconds}ms");
+
+            sw.Reset();
+            sw.Start();
+
+            using (var writer = new System.IO.StreamWriter(@"C:\CUR\file.out.csv"))
+            {
+                foreach (var line in lines)
+                {
+                    writer.WriteLine(line);
+                }
+            }
+
+            sw.Stop();
+            Console.WriteLine($"Saved {lines.Count} lines to output file in {sw.ElapsedMilliseconds}ms");
+
+            s.Stop();
+            Console.WriteLine($"Total time: {s.ElapsedMilliseconds}ms");
 
             //Span<char> line = new Memory<char>("1,\"2,3\",4,".ToCharArray()).Span;
 
