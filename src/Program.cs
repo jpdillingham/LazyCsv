@@ -31,7 +31,7 @@
 
             for (int i = 0; i < usageLines.Count(); i++)
             {
-                var line = usageLines[i];
+                var line = usageLines[i]; // inability to index this directly might be a bug
                 line["lineItem/UsageAmount"] = "10.0";
             }
 
@@ -43,10 +43,6 @@
             sw.Start();
 
             sum = 0;
-
-            usageLines = lines.Where(l =>
-                l["lineItem/ProductCode"].ToString() == "AmazonEC2" &&
-                l["lineItem/UsageType"].ToString() == "EU-BoxUsage:t2.medium").ToList();
 
             foreach (var line in usageLines)
             {

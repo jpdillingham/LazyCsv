@@ -90,14 +90,14 @@
                 var leftChunk = (start: 0, length: offset.start);
                 var rightChunk = (start: offset.start + offset.length, length: Text.Length - (offset.start + offset.length));
 
-                Memory<char> newText = new char[leftChunk.length + value.Length + rightChunk.length];
+                Span<char> newText = stackalloc char[leftChunk.length + value.Length + rightChunk.length];
 
-                Text.Span.Slice(leftChunk.start, leftChunk.length).CopyTo(newText.Span.Slice(leftChunk.start, leftChunk.length));
-                value.AsSpan().CopyTo(newText.Span.Slice(offset.start, value.Length));
-                Text.Span.Slice(rightChunk.start, rightChunk.length).CopyTo(newText.Span.Slice(offset.start + value.Length, rightChunk.length));
+                Text.Span.Slice(leftChunk.start, leftChunk.length).CopyTo(newText.Slice(leftChunk.start, leftChunk.length));
+                value.AsSpan().CopyTo(newText.Slice(offset.start, value.Length));
+                Text.Span.Slice(rightChunk.start, rightChunk.length).CopyTo(newText.Slice(offset.start + value.Length, rightChunk.length));
 
                 Offsets[i] = (offset.start, value.Length);
-                newText.CopyTo(Text);
+                newText.CopyTo(Text.Span);
             }
         }
     }
