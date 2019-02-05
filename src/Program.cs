@@ -5,27 +5,27 @@
 
     public class Program
     {
-        static LineCollection Lines { get; } = new LineCollection();
-
         static void Main(string[] args)
         {
             Console.WriteLine($"Reading file...");
-            Lines.LoadFrom(@"c:\file.csv");
+            var lines = new LineCollection(@"c:\file.csv");
             Console.WriteLine($"Done.");
 
-            Console.WriteLine($"Headers: {string.Join(", ", Lines.Headers)}");
+            Console.WriteLine($"Headers: {string.Join(", ", lines.Headers)}");
 
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            foreach (var line in Lines)
+            var len = 0;
+
+            foreach (var line in lines)
             {
-                Console.WriteLine(line["identity/LineItemId"]);
+                len += line["identity/LineItemId"].ToString().Length;
             }
 
             sw.Stop();
 
-            Console.WriteLine($"Iterated over {Lines.Lines.Count} lines in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"Iterated over {lines.Lines.Count} lines with total length {len} in {sw.ElapsedMilliseconds}ms");
 
             Console.ReadKey();
         }
