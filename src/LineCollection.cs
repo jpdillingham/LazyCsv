@@ -8,7 +8,7 @@
 
     public struct Line
     {
-        public List<(int start, int length)> Offsets;
+        public (int start, int length)[] Offsets;
 
         public Memory<char> Text;
 
@@ -17,12 +17,49 @@
         public Line(string text, Dictionary<string, int> headers)
         {
             Text = new Memory<char>(text.ToCharArray());
-
-            Offsets = new List<(int start, int length)>();
             Headers = headers;
 
-            // todo: populate offsets
-            Offsets.Add((start: 0, length: 52));
+            Offsets = new (int start, int length)[Headers.Count];
+
+            var span = Text.Span;
+            bool quoted = false;
+            int start = 0;
+            int offsetNum = 0;
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                char c = span[i];
+
+                if (c == '"' || c == '\'')
+                {
+                    quoted = !quoted;
+                }
+
+                if (i == span.Length - 1)
+                {
+                    if (c == ',')
+                    {
+                        Offsets[offsetNum] = ((start + 1, i - (start + 1)));
+                        Offsets[offsetNum + 1] = ((start + 1, 0));
+
+                        offsetNum += 2;
+                    }
+                    else
+                    {
+                        Offsets[offsetNum] = ((start + 1, i - (start + 0)));
+                        offsetNum++;
+                    }
+                }
+                else if (!quoted && c == ',')
+                {
+                    Offsets[offsetNum] = ((start + 1, i - (start + 1)));
+                    offsetNum++;
+                    start = i;
+                }
+            }
+
+            //// todo: populate offsets
+            //Offsets.Add((start: 0, length: 52));
         }
 
         public Memory<char> this[string column]
