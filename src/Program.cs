@@ -1,6 +1,7 @@
 ﻿namespace LazyCsvFile
 {
     using System;
+    using System.Diagnostics;
 
     public class Program
     {
@@ -14,10 +15,17 @@
 
             Console.WriteLine($"Headers: {string.Join(", ", Lines.Headers)}");
 
-            for (int i = 0; i < 10; i++)
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
+            foreach (var line in Lines)
             {
-                Console.WriteLine($"{i}: {Lines.Lines[i]["identity/LineItemId"]}");
+                Console.WriteLine(line["identity/LineItemId"]);
             }
+
+            sw.Stop();
+
+            Console.WriteLine($"Iterated over {Lines.Lines.Count} lines in {sw.ElapsedMilliseconds}ms");
 
             Console.ReadKey();
         }
