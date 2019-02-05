@@ -1,51 +1,104 @@
 ﻿namespace LazyCsvFile
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
 
-    public class LineCollection
+    public struct Line
     {
-        public struct ColumnOffset
+        public List<(int start, int length)> Offsets;
+
+        public Memory<char> Text;
+
+        private readonly Dictionary<string, int> Headers;
+
+        public Line(string text, Dictionary<string, int> headers)
         {
-            public int Start;
-            public int Length;
+            Text = new Memory<char>(text.ToCharArray());
+
+            Offsets = new List<(int start, int length)>();
+            Headers = headers;
+
+            // todo: populate offsets
+            Offsets.Add((start: 0, length: 52));
         }
 
-        public struct Line
+        public Memory<char> this[string column]
         {
-            public Line(string text, Dictionary<string, int> headers)
+            get
             {
-                Text = new Memory<char>(text.ToCharArray());
-                Offsets = new List<ColumnOffset>();
-                Headers = headers;
-
-                // todo: populate offsets
-                Offsets.Add(new ColumnOffset() { Start = 0, Length = 52 });
+                return this[Headers[column]];
             }
-
-            private readonly Dictionary<string, int> Headers;
-            public List<ColumnOffset> Offsets;
-            public Memory<char> Text;
-
-            public string this[string name]
+            set
             {
-                get
-                {
-                    // todo: look up the name in headers, use that index to fetch from Offsets, use those offsets to pull the string from Text
-                    var offset = Offsets[Headers[name]];
-                    return Text.Slice(offset.Start, offset.Length).ToString();
-                }
-                set
-                {
-                    // todo: figure out how to update Memory<T>
-                }
+                this[Headers[column]] = value;
             }
         }
 
+        public Memory<char> this[int i]
+        {
+            get
+            {
+                return Text.Slice(Offsets[i].start, Offsets[i].length);
+            }
+            set
+            {
+                // todo: figure out how to update Memory<T>
+            }
+        }
+    }
+
+    public class LineCollection : IList<Line>
+    {
+        public int Count => ((IList<Line>)Lines).Count;
         public Dictionary<string, int> Headers { get; } = new Dictionary<string, int>();
+        public bool IsReadOnly => ((IList<Line>)Lines).IsReadOnly;
         public List<Line> Lines { get; } = new List<Line>();
+        Line IList<Line>.this[int index] { get => ((IList<Line>)Lines)[index]; set => ((IList<Line>)Lines)[index] = value; }
+
+        public string this[int i] => Lines[i].Text.ToString();
+        public string this[int i, string column] => Lines[i][Headers[column]].ToString();
+
+        public void Add(Line item)
+        {
+            ((IList<Line>)Lines).Add(item);
+        }
+
+        public void Clear()
+        {
+            ((IList<Line>)Lines).Clear();
+        }
+
+        public bool Contains(Line item)
+        {
+            return ((IList<Line>)Lines).Contains(item);
+        }
+
+        public void CopyTo(Line[] array, int arrayIndex)
+        {
+            ((IList<Line>)Lines).CopyTo(array, arrayIndex);
+        }
+
+        public IEnumerator<Line> GetEnumerator()
+        {
+            return ((IList<Line>)Lines).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IList<Line>)Lines).GetEnumerator();
+        }
+
+        public int IndexOf(Line item)
+        {
+            return ((IList<Line>)Lines).IndexOf(item);
+        }
+
+        public void Insert(int index, Line item)
+        {
+            ((IList<Line>)Lines).Insert(index, item);
+        }
 
         public void LoadFrom(string file)
         {
@@ -53,7 +106,7 @@
             {
                 var headerLine = reader.ReadLine();
                 var headers = headerLine.Split(',');
-                
+
                 for (int i = 0; i < headers.Length; i++)
                 {
                     Headers.Add(headers[i], i);
@@ -64,6 +117,16 @@
                     Lines.Add(new Line(reader.ReadLine(), Headers));
                 }
             }
+        }
+
+        public bool Remove(Line item)
+        {
+            return ((IList<Line>)Lines).Remove(item);
+        }
+
+        public void RemoveAt(int index)
+        {
+            ((IList<Line>)Lines).RemoveAt(index);
         }
     }
 }
