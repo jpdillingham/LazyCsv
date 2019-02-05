@@ -62,7 +62,7 @@
             //Offsets.Add((start: 0, length: 52));
         }
 
-        public Memory<char> this[string column]
+        public string this[string column]
         {
             get
             {
@@ -74,15 +74,30 @@
             }
         }
 
-        public Memory<char> this[int i]
+        public string this[int i]
         {
             get
             {
-                return Text.Slice(Offsets[i].start, Offsets[i].length);
+                return Text.Slice(Offsets[i].start, Offsets[i].length).ToString();
             }
             set
             {
                 // todo: figure out how to update Memory<T>
+                var offset = Offsets[i];
+
+                var currentvalue = Text.Slice(offset.start, offset.length);
+
+                var leftChunk = (start: 0, length: offset.start);
+                var rightChunk = (start: offset.start + offset.length, length: Text.Length - (offset.start + offset.length));
+
+                Memory<char> newText = new char[leftChunk.length + value.Length + rightChunk.length];
+
+                Text.Span.Slice(leftChunk.start, leftChunk.length).CopyTo(newText.Span.Slice(leftChunk.start, leftChunk.length));
+                value.AsSpan().CopyTo(newText.Span.Slice(offset.start, value.Length));
+                Text.Span.Slice(rightChunk.start, rightChunk.length).CopyTo(newText.Span.Slice(offset.start + value.Length, rightChunk.length));
+
+                Offsets[i] = (offset.start, value.Length);
+                newText.CopyTo(Text);
             }
         }
     }

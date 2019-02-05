@@ -20,13 +20,38 @@
 
             double sum = 0;
 
-            var usageLines = lines.Where(l =>
+            List<Line> usageLines = lines.Where(l =>
                 l["lineItem/ProductCode"].ToString() == "AmazonEC2" &&
-                l["lineItem/UsageType"].ToString() == "EU-BoxUsage:t2.medium");
+                l["lineItem/UsageType"].ToString() == "EU-BoxUsage:t2.medium").ToList();
 
             foreach (var line in usageLines)
             {
                 sum += double.Parse(line["lineItem/UsageAmount"].ToString());
+            }
+
+            for (int i = 0; i < usageLines.Count(); i++)
+            {
+                var line = usageLines[i];
+                line["lineItem/UsageAmount"] = "10.0";
+            }
+
+            sw.Stop();
+
+            Console.WriteLine($"Iterated over {usageLines.Count()} lines of EC2 t2.medium usage with total usage {sum} in {sw.ElapsedMilliseconds}ms");
+
+            sw.Reset();
+            sw.Start();
+
+            sum = 0;
+
+            usageLines = lines.Where(l =>
+                l["lineItem/ProductCode"].ToString() == "AmazonEC2" &&
+                l["lineItem/UsageType"].ToString() == "EU-BoxUsage:t2.medium").ToList();
+
+            foreach (var line in usageLines)
+            {
+                var val = line["lineItem/UsageAmount"].ToString();
+                sum += double.Parse(val);
             }
 
             sw.Stop();
