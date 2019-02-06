@@ -55,7 +55,7 @@
         public Memory<char> Text;
 
         private readonly Dictionary<string, int> Headers;
-        private readonly int Slack;
+        private int Slack;
 
         public Line(string text, Dictionary<string, int> headers, int slack)
         {
@@ -64,13 +64,23 @@
             Text = new char[text.Length + slack];
             text.AsSpan().CopyTo(Text.Span);
 
-            Span<char> span = stackalloc char[text.Length + slack];
-            Text.Span.CopyTo(span);
+
 
             Headers = headers;
             Slack = slack;
 
-            Offsets = new(int start, int length)[Headers.Count];
+            CalculateOffsets();
+
+            //// todo: populate offsets
+            //Offsets.Add((start: 0, length: 52));
+        }
+
+        private void CalculateOffsets()
+        {
+            Span<char> span = stackalloc char[Text.Length + Slack];
+            Text.Span.CopyTo(span);
+
+            Offsets = new (int start, int length)[Headers.Count];
 
             bool quoted = false;
             int start = 0;
@@ -107,9 +117,6 @@
                     start = i + 1;
                 }
             }
-
-            //// todo: populate offsets
-            //Offsets.Add((start: 0, length: 52));
         }
 
         public string this[string column]
@@ -132,18 +139,25 @@
             }
             set
             {
-                Console.WriteLine($"-----------------");
-                Console.WriteLine($"Current len: {Text.Length - 10}, {Text.Span.Slice(0, Text.Length - 10).ToString()}");
+                Console.WriteLine($"------------------------------------------------");
+                Console.WriteLine($"Current len: {Text.Length - Slack}, {Text.Span.Slice(0, Text.Length - 10).ToString()}");
 
-                // todo: figure out how to update Memory<T>
                 var offset = Offsets[i];
-                Console.WriteLine($"updating offset {i}: [{offset.start}, {offset.length}]");
+
+                foreach (var o in Offsets)
+                {
+                    Console.Write($"[{o.start}, {o.length}] ");
+                }
+
+                Console.WriteLine($"old value: {Text.Span.Slice(offset.start, offset.length).ToString()}, length: {offset.length}");
+                Console.WriteLine($"new value: {value}, length: {value.Length}");
+
+                Console.WriteLine($"slack changes by: {offset.length - value.Length}");
+                var change = offset.length - value.Length;
+                Slack += change;
 
                 var leftChunk = (start: 0, length: offset.start);
-                Console.WriteLine($"left chunk: [{leftChunk.start}, {leftChunk.length}]");
-
                 var rightChunk = (start: offset.start + offset.length, length: Text.Length - Slack - (offset.start + offset.length));
-                Console.WriteLine($"right chunk: [{rightChunk.start}, {rightChunk.length}]");
 
                 Span<char> oldText = stackalloc char[Text.Length];
                 Text.Span.CopyTo(oldText);
@@ -161,11 +175,25 @@
 
                 oldText.Slice(rightChunk.start, rightChunk.length).CopyTo(newText.Slice(offset.start + value.Length, rightChunk.length));
                 Console.WriteLine($"copied right chunk: {newText.ToString()}");
-
-                Offsets[i] = (offset.start, value.Length);
+                
+                Console.WriteLine("");
 
                 Text.Span.Clear();
                 newText.CopyTo(Text.Span);
+
+                foreach (var o in Offsets)
+                {
+                    Console.Write($"[{o.start}, {o.length}] ");
+                }
+
+                Console.WriteLine($"old offset: [{offset.start}, {offset.length}]");
+                CalculateOffsets();
+                Console.WriteLine($"new offset: [{Offsets[i].start}, {Offsets[i].length}]");
+
+                foreach (var o in Offsets)
+                {
+                    Console.Write($"[{o.start}, {o.length}] ");
+                }
 
                 Console.WriteLine($"Updated len: {Text.Length}, {Text}");
             }
