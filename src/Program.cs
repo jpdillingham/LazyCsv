@@ -44,14 +44,13 @@
             //    line["identity/LineItemId"] = "a";
             //}
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 1; i++)
             {
-                foreach (var line in lines.Where(l => l["lineItem/ProductCode"] == "AWSLambda"))
+                foreach (var line in lines)
                 {
-                    var x = line["identity/LineItemId"];
-                    //line[0] = "oneone";
-                    //line[1] = "twotwo";
-                    //line[2] = "threethree";
+                    line["lineItem/ProductCode"] = string.Empty;
+                    line["lineItem/UnblendedRate"] = (double.Parse(line["lineItem/UnblendedRate"]) * 2).ToString();
+                    line["lineItem/ResourceId"] = line["lineItem/ResourceId"] == string.Empty ? "EMPTY" : line["lineItem/ResourceId"];
                 }
             }
 
