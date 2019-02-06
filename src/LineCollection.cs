@@ -139,20 +139,20 @@
             }
             set
             {
-                Console.WriteLine($"------------------------------------------------");
-                Console.WriteLine($"Current len: {Text.Length - Slack}, {Text.Span.Slice(0, Text.Length - 10).ToString()}");
+                //Console.WriteLine($"------------------------------------------------");
+                //Console.WriteLine($"Current len: {Text.Length - Slack}, {Text.Span.Slice(0, Text.Length - 10).ToString()}");
 
                 var offset = Offsets[i];
 
-                foreach (var o in Offsets)
-                {
-                    Console.Write($"[{o.start}, {o.length}] ");
-                }
+                //foreach (var o in Offsets)
+                //{
+                //    Console.Write($"[{o.start}, {o.length}] ");
+                //}
 
-                Console.WriteLine($"old value: {Text.Span.Slice(offset.start, offset.length).ToString()}, length: {offset.length}");
-                Console.WriteLine($"new value: {value}, length: {value.Length}");
+                //Console.WriteLine($"old value: {Text.Span.Slice(offset.start, offset.length).ToString()}, length: {offset.length}");
+                //Console.WriteLine($"new value: {value}, length: {value.Length}");
 
-                Console.WriteLine($"slack changes by: {offset.length - value.Length}");
+                //Console.WriteLine($"slack changes by: {offset.length - value.Length}");
                 var change = offset.length - value.Length;
                 Slack += change;
 
@@ -163,43 +163,25 @@
                 Text.Span.CopyTo(oldText);
 
                 var len = leftChunk.length + value.Length + rightChunk.length;
-                Console.WriteLine($"new: {len}");
+                //Console.WriteLine($"new: {len}");
                 Span<char> newText = stackalloc char[len];              
 
                 oldText.Slice(leftChunk.start, leftChunk.length).CopyTo(newText.Slice(leftChunk.start, leftChunk.length));
-                Console.WriteLine($"copied left chunk: {newText.ToString()}");
+                //Console.WriteLine($"copied left chunk: {newText.ToString()}");
 
                 //oldText.CopyTo(newText.Slice(offset.start, value.Length));
                 value.AsSpan().CopyTo(newText.Slice(offset.start, value.Length));
-                Console.WriteLine($"copied new value: {newText.ToString()}");
+                //Console.WriteLine($"copied new value: {newText.ToString()}");
 
                 oldText.Slice(rightChunk.start, rightChunk.length).CopyTo(newText.Slice(offset.start + value.Length, rightChunk.length));
-                Console.WriteLine($"copied right chunk: {newText.ToString()}");
-                
-                Console.WriteLine("");
-
                 Text.Span.Clear();
                 newText.CopyTo(Text.Span);
 
-                foreach (var o in Offsets)
-                {
-                    Console.Write($"[{o.start}, {o.length}] ");
-                }
-
-                Console.WriteLine($"old offset: [{offset.start}, {offset.length}]");
-                CalculateOffsets();
-                Console.WriteLine($"new offset: [{Offsets[i].start}, {Offsets[i].length}]");
-
-                foreach (var o in Offsets)
-                {
-                    Console.Write($"[{o.start}, {o.length}] ");
-                }
-
-                Console.WriteLine($"Updated len: {Text.Length}, {Text}");
+                //CalculateOffsets();
             }
         }
 
-        public override string ToString() => Text.ToString();
+        public override string ToString() => Text.Span.Slice(0, Text.Length - Slack).ToString();
     }
 
     public class LineCollection : IList<Line>

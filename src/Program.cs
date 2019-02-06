@@ -16,7 +16,7 @@
             sw.Start();
 
             Console.WriteLine($"Reading file...");
-            var lines = new LineCollection(@"c:\CUR\file.csv", 10);
+            var lines = new LineCollection(@"c:\CUR\bigfile.csv", 10);
             Console.WriteLine($"Done.");
 
             sw.Stop();
@@ -49,7 +49,7 @@
                 foreach (var line in lines)
                 {
                     line[0] = "oneone";
-                    line[1] = "twotwo";
+                    //line[1] = "twotwo";
                     //line[2] = "threethree";
                 }
             }
