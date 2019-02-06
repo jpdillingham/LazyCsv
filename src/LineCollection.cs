@@ -52,25 +52,28 @@
     {
         public (int start, int length)[] Offsets;
 
-        public Memory<char> Text;
+        //public Memory<char> Text;
+        public string Text;
 
         private readonly Dictionary<string, int> Headers;
+        private readonly int Slack;
 
-        public Line(string text, Dictionary<string, int> headers)
+        public Line(string text, Dictionary<string, int> headers, int slack)
         {
-            Text = new Memory<char>(text.ToCharArray());
+            Text = text;
+            Span<char> span = stackalloc char[text.Length + slack];
+            text.AsSpan().CopyTo(span);
+
             Headers = headers;
+            Slack = slack;
 
             Offsets = new(int start, int length)[Headers.Count];
-
-            Span<char> span = stackalloc char[Text.Length];
-            Text.Span.CopyTo(span);
 
             bool quoted = false;
             int start = 0;
             int offsetNum = 0;
 
-            for (int i = 0; i < span.Length; i++)
+            for (int i = 0; i < Text.Length; i++)
             {
                 char c = span[i];
 
@@ -79,7 +82,7 @@
                     quoted = !quoted;
                 }
 
-                if (i == span.Length - 1)
+                if (i == Text.Length - 1)
                 {
                     if (c == ',')
                     {
@@ -96,7 +99,7 @@
                 }
                 else if (!quoted && c == ',')
                 {
-                    Offsets[offsetNum] = ((start + 1, i - (start + 1)));
+                    Offsets[offsetNum] = ((start, i - (start + 1)));
                     offsetNum++;
                     start = i;
                 }
@@ -122,7 +125,7 @@
         {
             get
             {
-                return Text.Slice(Offsets[i].start, Offsets[i].length).ToString();
+                return Text.AsSpan().Slice(Offsets[i].start, Offsets[i].length).ToString();
             }
             set
             {
@@ -134,16 +137,21 @@
                 var leftChunk = (start: 0, length: offset.start);
                 var rightChunk = (start: offset.start + offset.length, length: Text.Length - (offset.start + offset.length));
 
-                Span<char> newText = stackalloc char[leftChunk.length + value.Length + rightChunk.length];
+                Span<char> oldText = stackalloc char[Text.Length];
+                Text.AsSpan().CopyTo(oldText);
 
-                Text.Span.Slice(leftChunk.start, leftChunk.length).CopyTo(newText.Slice(leftChunk.start, leftChunk.length));
+                var len = leftChunk.length + value.Length + rightChunk.length + Slack;
+                Span<char> newText = stackalloc char[len];              
+
+                oldText.Slice(leftChunk.start, leftChunk.length).CopyTo(newText.Slice(leftChunk.start, leftChunk.length));
+
+                //oldText.CopyTo(newText.Slice(offset.start, value.Length));
                 value.AsSpan().CopyTo(newText.Slice(offset.start, value.Length));
-                Text.Span.Slice(rightChunk.start, rightChunk.length).CopyTo(newText.Slice(offset.start + value.Length, rightChunk.length));
+                oldText.Slice(rightChunk.start, rightChunk.length).CopyTo(newText.Slice(offset.start + value.Length, rightChunk.length));
 
                 Offsets[i] = (offset.start, value.Length);
 
-                Text.Span.Clear();
-                newText.CopyTo(Text.Span);
+                Text = newText.ToString();
 
                 //Console.WriteLine($"Updated len: {Text.Length}, {Text}");
             }
@@ -163,7 +171,7 @@
         public Line this[int i] => Lines[i];
         public string this[int i, string column] => Lines[i][Headers[column]].ToString();
 
-        public LineCollection(string file)
+        public LineCollection(string file, int slack)
         {
             using (var reader = new StreamReader(file))
             {
@@ -173,7 +181,7 @@
 
                 while (!reader.EndOfStream)
                 {
-                    Lines.Add(new Line(reader.ReadLine(), Headers));
+                    Lines.Add(new Line(reader.ReadLine(), Headers, slack));
                 }
             }
         }

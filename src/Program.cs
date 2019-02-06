@@ -16,12 +16,12 @@
             sw.Start();
 
             Console.WriteLine($"Reading file...");
-            var lines = new LineCollection(@"c:\CUR\bigfile.csv");
+            var lines = new LineCollection(@"c:\CUR\bigfile.csv", 0);
             Console.WriteLine($"Done.");
 
             sw.Stop();
             Console.WriteLine($"Loaded file in {sw.ElapsedMilliseconds}ms");
-            Console.WriteLine($"Headers: {string.Join(", ", lines.Headers)}");
+            //Console.WriteLine($"Headers: {string.Join(", ", lines.Headers)}");
 
             sw.Reset();
             sw.Start();
@@ -48,7 +48,7 @@
             {
                 foreach (var line in lines)
                 {
-                    line[0] = i.ToString("D3");
+                    line[0] = i.ToString();
                 }
             }
 
@@ -134,7 +134,7 @@
             //    Console.WriteLine($"[{offset.start}, {offset.length}]: {line.Slice(offset.start, offset.length).ToString()}");
             //}
 
-            Console.ReadKey();
+            //Console.ReadKey();
         }
     }
 }
