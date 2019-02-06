@@ -21,21 +21,18 @@
 
         public List<string> SplitCsvLine(string s)
         {
-            Span<char> span = stackalloc char[s.Length];
-            s.AsSpan().CopyTo(span);
-
             int i;
             int a = 0;
             int count = 0;
             List<string> str = new List<string>();
-            for (i = 0; i < span.Length; i++)
+            for (i = 0; i < s.Length; i++)
             {
-                switch (span[i])
+                switch (s[i])
                 {
                     case ',':
                         if ((count & 1) == 0)
                         {
-                            str.Add(span.Slice(a, i - a).ToString());
+                            str.Add(s.Substring(a, i - a));
                             a = i + 1;
                         }
                         break;
@@ -43,7 +40,7 @@
                     case '\'': count++; break;
                 }
             }
-            str.Add(span.Slice(a).ToString());
+            str.Add(s.Substring(a));
             return str;
         }
 
