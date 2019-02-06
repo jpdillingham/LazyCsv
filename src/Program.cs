@@ -46,9 +46,10 @@
 
             for (int i = 0; i < 10; i++)
             {
-                foreach (var line in lines)
+                foreach (var line in lines.Where(l => l["lineItem/ProductCode"] == "AWSLambda"))
                 {
-                    line[0] = "oneone";
+                    var x = line["identity/LineItemId"];
+                    //line[0] = "oneone";
                     //line[1] = "twotwo";
                     //line[2] = "threethree";
                 }
