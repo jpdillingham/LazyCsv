@@ -186,6 +186,7 @@
                 Text.Span.Clear();
                 newText.CopyTo(Text.Span);
 
+                // todo: swap this out for an offset shift rather than recalculation
                 CalculateOffsets();
             }
         }
