@@ -48,9 +48,21 @@
     //    }
     //}
 
+    public struct Offset
+    {
+        public Offset(int start, int length)
+        {
+            Start = start;
+            Length = length;
+        }
+
+        public int Start;
+        public int Length;
+    }
+
     public class Line
     {
-        public (int start, int length)[] Offsets;
+        public Memory<Offset> Offsets;
 
         public Memory<char> Text;
 
@@ -60,19 +72,14 @@
         public Line(string text, Dictionary<string, int> headers, int slack)
         {
             Slack = slack;
-
+            Offsets = new Offset[headers.Count];
             Text = new char[text.Length + slack];
             text.AsSpan().CopyTo(Text.Span);
-
-
 
             Headers = headers;
             Slack = slack;
 
             CalculateOffsets();
-
-            //// todo: populate offsets
-            //Offsets.Add((start: 0, length: 52));
         }
 
         private void CalculateOffsets()
@@ -80,7 +87,7 @@
             Span<char> span = stackalloc char[Text.Length + Slack];
             Text.Span.CopyTo(span);
 
-            Offsets = new (int start, int length)[Headers.Count];
+            Span<Offset> offsets = stackalloc Offset[Headers.Count];
 
             bool quoted = false;
             int start = 0;
@@ -99,24 +106,26 @@
                 {
                     if (c == ',')
                     {
-                        Offsets[offsetNum] = ((start + 1, i - (start + 1)));
-                        Offsets[offsetNum + 1] = ((start + 1, 0));
+                        offsets[offsetNum] = new Offset(start + 1, i - (start + 1));
+                        offsets[offsetNum + 1] = new Offset(start + 1, 0);
 
                         offsetNum += 2;
                     }
                     else
                     {
-                        Offsets[offsetNum] = ((start + 1, i - (start + 0)));
+                        offsets[offsetNum] = new Offset(start + 1, i - (start + 0));
                         offsetNum++;
                     }
                 }
                 else if (!quoted && c == ',')
                 {
-                    Offsets[offsetNum] = ((start, i - (start)));
+                    offsets[offsetNum] = new Offset(start, i - (start));
                     offsetNum++;
                     start = i + 1;
                 }
             }
+
+            offsets.CopyTo(Offsets.Span);
         }
 
         public string this[string column]
@@ -135,14 +144,14 @@
         {
             get
             {
-                return Text.Span.Slice(Offsets[i].start, Offsets[i].length).ToString();
+                return Text.Span.Slice(Offsets.Span[i].Start, Offsets.Span[i].Length).ToString();
             }
             set
             {
                 //Console.WriteLine($"------------------------------------------------");
                 //Console.WriteLine($"Current len: {Text.Length - Slack}, {Text.Span.Slice(0, Text.Length - 10).ToString()}");
 
-                var offset = Offsets[i];
+                var offset = Offsets.Span[i];
 
                 //foreach (var o in Offsets)
                 //{
@@ -153,11 +162,11 @@
                 //Console.WriteLine($"new value: {value}, length: {value.Length}");
 
                 //Console.WriteLine($"slack changes by: {offset.length - value.Length}");
-                var change = offset.length - value.Length;
+                var change = offset.Length - value.Length;
                 Slack += change;
 
-                var leftChunk = (start: 0, length: offset.start);
-                var rightChunk = (start: offset.start + offset.length, length: Text.Length - Slack - (offset.start + offset.length));
+                var leftChunk = (start: 0, length: offset.Start);
+                var rightChunk = (start: offset.Start + offset.Length, length: Text.Length - Slack - (offset.Start + offset.Length));
 
                 Span<char> oldText = stackalloc char[Text.Length];
                 Text.Span.CopyTo(oldText);
@@ -170,14 +179,14 @@
                 //Console.WriteLine($"copied left chunk: {newText.ToString()}");
 
                 //oldText.CopyTo(newText.Slice(offset.start, value.Length));
-                value.AsSpan().CopyTo(newText.Slice(offset.start, value.Length));
+                value.AsSpan().CopyTo(newText.Slice(offset.Start, value.Length));
                 //Console.WriteLine($"copied new value: {newText.ToString()}");
 
-                oldText.Slice(rightChunk.start, rightChunk.length).CopyTo(newText.Slice(offset.start + value.Length, rightChunk.length));
+                oldText.Slice(rightChunk.start, rightChunk.length).CopyTo(newText.Slice(offset.Start + value.Length, rightChunk.length));
                 Text.Span.Clear();
                 newText.CopyTo(Text.Span);
 
-                //CalculateOffsets();
+                CalculateOffsets();
             }
         }
 

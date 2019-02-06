@@ -44,7 +44,7 @@
             //    line["identity/LineItemId"] = "a";
             //}
 
-            for (int i = 0; i < 1; i++)
+            for (int i = 0; i < 10; i++)
             {
                 foreach (var line in lines)
                 {
@@ -136,7 +136,7 @@
             //    Console.WriteLine($"[{offset.start}, {offset.length}]: {line.Slice(offset.start, offset.length).ToString()}");
             //}
 
-            //Console.ReadKey();
+            Console.ReadKey();
         }
     }
 }
