@@ -16,7 +16,7 @@
             sw.Start();
 
             Console.WriteLine($"Reading file...");
-            var lines = new LineCollection(@"c:\CUR\bigfile.csv", 0);
+            var lines = new LineCollection(@"c:\CUR\file.csv", 10);
             Console.WriteLine($"Done.");
 
             sw.Stop();
@@ -48,7 +48,7 @@
             {
                 foreach (var line in lines)
                 {
-                    line[0] = i.ToString();
+                    line[0] = "grljoga67ptvfzz22vdihhju7y6gyq2hnbthct7foll7j45a2a4";
                 }
             }
 

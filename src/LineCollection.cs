@@ -52,17 +52,20 @@
     {
         public (int start, int length)[] Offsets;
 
-        //public Memory<char> Text;
-        public string Text;
+        public Memory<char> Text;
 
         private readonly Dictionary<string, int> Headers;
         private readonly int Slack;
 
         public Line(string text, Dictionary<string, int> headers, int slack)
         {
-            Text = text;
+            Slack = slack;
+
+            Text = new char[text.Length + slack];
+            text.AsSpan().CopyTo(Text.Span);
+
             Span<char> span = stackalloc char[text.Length + slack];
-            text.AsSpan().CopyTo(span);
+            Text.Span.CopyTo(span);
 
             Headers = headers;
             Slack = slack;
@@ -99,7 +102,7 @@
                 }
                 else if (!quoted && c == ',')
                 {
-                    Offsets[offsetNum] = ((start, i - (start + 1)));
+                    Offsets[offsetNum] = ((start, i - (start)));
                     offsetNum++;
                     start = i;
                 }
@@ -125,7 +128,7 @@
         {
             get
             {
-                return Text.AsSpan().Slice(Offsets[i].start, Offsets[i].length).ToString();
+                return Text.Span.Slice(Offsets[i].start, Offsets[i].length).ToString();
             }
             set
             {
@@ -137,10 +140,12 @@
                 var leftChunk = (start: 0, length: offset.start);
                 var rightChunk = (start: offset.start + offset.length, length: Text.Length - (offset.start + offset.length));
 
+                Console.WriteLine($"old {Text.Length}");
                 Span<char> oldText = stackalloc char[Text.Length];
-                Text.AsSpan().CopyTo(oldText);
+                Text.Span.CopyTo(oldText);
 
-                var len = leftChunk.length + value.Length + rightChunk.length + Slack;
+                var len = leftChunk.length + value.Length + rightChunk.length;
+                Console.WriteLine($"new: {len}");
                 Span<char> newText = stackalloc char[len];              
 
                 oldText.Slice(leftChunk.start, leftChunk.length).CopyTo(newText.Slice(leftChunk.start, leftChunk.length));
@@ -151,7 +156,8 @@
 
                 Offsets[i] = (offset.start, value.Length);
 
-                Text = newText.ToString();
+                Text.Span.Clear();
+                newText.CopyTo(Text.Span);
 
                 //Console.WriteLine($"Updated len: {Text.Length}, {Text}");
             }
