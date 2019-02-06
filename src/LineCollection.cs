@@ -104,7 +104,7 @@
                 {
                     Offsets[offsetNum] = ((start, i - (start)));
                     offsetNum++;
-                    start = i;
+                    start = i + 1;
                 }
             }
 
@@ -132,15 +132,19 @@
             }
             set
             {
-                //Console.WriteLine($"Current len: {Text.Length}, {Text}");
+                Console.WriteLine($"-----------------");
+                Console.WriteLine($"Current len: {Text.Length - 10}, {Text.Span.Slice(0, Text.Length - 10).ToString()}");
 
                 // todo: figure out how to update Memory<T>
                 var offset = Offsets[i];
+                Console.WriteLine($"updating offset {i}: [{offset.start}, {offset.length}]");
 
                 var leftChunk = (start: 0, length: offset.start);
-                var rightChunk = (start: offset.start + offset.length, length: Text.Length - (offset.start + offset.length));
+                Console.WriteLine($"left chunk: [{leftChunk.start}, {leftChunk.length}]");
 
-                Console.WriteLine($"old {Text.Length}");
+                var rightChunk = (start: offset.start + offset.length, length: Text.Length - Slack - (offset.start + offset.length));
+                Console.WriteLine($"right chunk: [{rightChunk.start}, {rightChunk.length}]");
+
                 Span<char> oldText = stackalloc char[Text.Length];
                 Text.Span.CopyTo(oldText);
 
@@ -149,17 +153,21 @@
                 Span<char> newText = stackalloc char[len];              
 
                 oldText.Slice(leftChunk.start, leftChunk.length).CopyTo(newText.Slice(leftChunk.start, leftChunk.length));
+                Console.WriteLine($"copied left chunk: {newText.ToString()}");
 
                 //oldText.CopyTo(newText.Slice(offset.start, value.Length));
                 value.AsSpan().CopyTo(newText.Slice(offset.start, value.Length));
+                Console.WriteLine($"copied new value: {newText.ToString()}");
+
                 oldText.Slice(rightChunk.start, rightChunk.length).CopyTo(newText.Slice(offset.start + value.Length, rightChunk.length));
+                Console.WriteLine($"copied right chunk: {newText.ToString()}");
 
                 Offsets[i] = (offset.start, value.Length);
 
                 Text.Span.Clear();
                 newText.CopyTo(Text.Span);
 
-                //Console.WriteLine($"Updated len: {Text.Length}, {Text}");
+                Console.WriteLine($"Updated len: {Text.Length}, {Text}");
             }
         }
 
