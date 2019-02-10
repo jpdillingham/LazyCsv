@@ -3,12 +3,26 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.IO;
     using System.Linq;
 
     public class Program
     {
         static void Main(string[] args)
         {
+            //using (var file = new StreamReader(@"C:\CUR\4005-.csv"))
+            //using (var outf = new StreamWriter(@"C:\CUR\mediumfile.csv"))
+            //{
+            //    int count = 0;
+            //    while (!file.EndOfStream && count < 1000)
+            //    {
+            //        count++;
+            //        outf.WriteLine(file.ReadLine());
+            //    }
+            //}
+
+            //return;
+
             Stopwatch s = new Stopwatch();
             s.Start();
 
@@ -16,7 +30,7 @@
             sw.Start();
 
             Console.WriteLine($"Reading file...");
-            var lines = new LineCollection(@"c:\CUR\bigfile.csv", 10);
+            var lines = new LineCollection(@"c:\CUR\mediumfile.csv", 10);
             Console.WriteLine($"Done.");
 
             sw.Stop();
@@ -48,9 +62,20 @@
             {
                 foreach (var line in lines)
                 {
-                    line["lineItem/ProductCode"] = string.Empty;
-                    line["lineItem/UnblendedRate"] = (double.Parse(line["lineItem/UnblendedRate"]) * 2).ToString();
-                    line["lineItem/ResourceId"] = line["lineItem/ResourceId"] == string.Empty ? "EMPTY" : line["lineItem/ResourceId"];
+                    //line["five"] = "!";
+                    var ubr = line["lineItem/UnblendedRate"];
+                    ubr = ubr == string.Empty ? "0" : ubr;
+
+                    try
+                    {
+                        line["lineItem/UnblendedRate"] = (decimal.Parse(ubr) * 2).ToString();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to parse value '{ubr}': {ex.Message}");
+                    }
+                    var rid = line["lineItem/ResourceId"];
+                    line["lineItem/ResourceId"] = rid == string.Empty ? "EMPTY" : rid;
                 }
             }
 
