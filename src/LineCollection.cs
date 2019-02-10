@@ -168,42 +168,6 @@
             }
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Update(int i, string value)
-        {
-            var valueOffset = Offsets.Span[i];
-            var valueLengthDifference = value.Length - valueOffset.Length;
-
-            if (valueLengthDifference == 0)
-            {
-                // if the length didn't change, just overwrite the data in place.
-                value.AsSpan().CopyTo(Text.Span.Slice(valueOffset.Start));
-                return;
-            }
-
-            var shiftChunkStart = valueOffset.Start + valueOffset.Length;
-            var shiftChunkLength = Text.Span.Length - shiftChunkStart - Slack - valueLengthDifference;
-            var shiftChunkDestination = shiftChunkStart + valueLengthDifference;
-
-            Text.Span
-                .Slice(shiftChunkStart, shiftChunkLength)
-                .CopyTo(Text.Span.Slice(shiftChunkDestination));
-
-            value.AsSpan().CopyTo(Text.Span.Slice(valueOffset.Start));
-
-            Slack -= valueLengthDifference;
-
-            Offsets.Span[i].Length = valueOffset.Length += valueLengthDifference;
-
-            var start = valueOffset.Start + valueOffset.Length + 1;
-
-            for (int j = i + 1; j < Offsets.Length; j++)
-            {
-                Offsets.Span[j].Start = start;                
-                start += Offsets.Span[j].Length + 1;
-            }
-        }
-
         public string this[int i]
         {
             get
@@ -234,15 +198,20 @@
 
                 Slack -= valueLengthDifference;
 
-                Offsets.Span[i].Length = valueOffset.Length += valueLengthDifference;
+                Span<Offset> off = stackalloc Offset[Headers.Count];
+                Offsets.Span.CopyTo(off);
+
+                off[i].Length = valueOffset.Length += valueLengthDifference;
 
                 var start = valueOffset.Start + valueOffset.Length + 1;
 
-                for (int j = i + 1; j < Offsets.Length; j++)
+                for (int j = i + 1; j < off.Length; j++)
                 {
-                    Offsets.Span[j].Start = start;
-                    start += Offsets.Span[j].Length + 1;
+                    off[j].Start = start;
+                    start += off[j].Length + 1;
                 }
+
+                off.CopyTo(Offsets.Span);
             }
         }
 

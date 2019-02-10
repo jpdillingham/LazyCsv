@@ -30,7 +30,7 @@
             sw.Start();
 
             Console.WriteLine($"Reading file...");
-            var lines = new LineCollection(@"c:\CUR\bigfile.csv", 10);
+            var lines = new LineCollection(@"c:\CUR\aws-cur-003.csv", 10);
             Console.WriteLine($"Done.");
 
             sw.Stop();
