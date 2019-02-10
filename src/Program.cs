@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
+    using System.IO.Compression;
     using System.Linq;
 
     public class Program
@@ -30,7 +31,7 @@
             sw.Start();
 
             Console.WriteLine($"Reading file...");
-            var lines = new LineCollection(@"c:\CUR\aws-cur-003.csv", 10);
+            var lines = new LineCollection(@"c:\CUR\aws-cur-003.csv.gz", 10);
             Console.WriteLine($"Done.");
 
             sw.Stop();
@@ -102,7 +103,9 @@
             sw.Reset();
             sw.Start();
 
-            using (var writer = new System.IO.StreamWriter(@"C:\CUR\file.out.csv"))
+            using (var fs = File.Open(@"C:\CUR\file.out.csv", FileMode.Create))
+            using (var gzip = new GZipStream(fs, CompressionLevel.Fastest))
+            using (var writer = new StreamWriter(gzip))
             {
                 foreach (var line in lines)
                 {

@@ -4,6 +4,7 @@
     using System.Collections;
     using System.Collections.Generic;
     using System.IO;
+    using System.IO.Compression;
     using System.Linq;
     using System.Runtime.CompilerServices;
 
@@ -231,7 +232,13 @@
 
         public LineCollection(string file, int slack)
         {
-            using (var reader = new StreamReader(file))
+            //var mem = File.ReadAllBytes(file);
+
+            //using (var reader = new StreamReader(file))
+            using (FileStream fileStream = File.Open(file, FileMode.Open))
+            //using (MemoryStream memstr = new MemoryStream(mem))
+            using (GZipStream inZip = new GZipStream(fileStream, CompressionMode.Decompress))
+            using (StreamReader reader = new StreamReader(inZip))
             {
                 Headers = reader.ReadLine().Split(',')
                     .Select((x, i) => new KeyValuePair<string, int>(x, i))
