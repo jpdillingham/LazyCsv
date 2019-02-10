@@ -87,11 +87,11 @@
         public int Length;
     }
 
-    public class Line
+    public sealed class Line
     {
-        public Memory<Offset> Offsets;
+        private Memory<Offset> Offsets;
 
-        public Memory<char> Text;
+        private Memory<char> Text;
 
         private readonly Dictionary<string, int> Headers;
         private int Slack;
@@ -193,30 +193,15 @@
 
             Slack -= valueLengthDifference;
 
-            //Console.WriteLine($"Old offset: {valueOffset.Start}, {valueOffset.Length}");
             Offsets.Span[i].Length = valueOffset.Length += valueLengthDifference;
-            //Console.WriteLine($"New offset: {valueOffset.Start}, {valueOffset.Length}");
 
-            // shift all of the offsets to match the change
             var start = valueOffset.Start + valueOffset.Length + 1;
 
             for (int j = i + 1; j < Offsets.Length; j++)
             {
-                //Console.WriteLine($"Old offset: {Offsets.Span[j].Start}, {Offsets.Span[j].Length}: {Text.Span.Slice(Offsets.Span[j].Start, Offsets.Span[j].Length).ToString()}");
-                Offsets.Span[j].Start = start;
-                //Console.WriteLine($"New offset: {Offsets.Span[j].Start}, {Offsets.Span[j].Length}: {Text.Span.Slice(Offsets.Span[j].Start, Offsets.Span[j].Length).ToString()}");
-                
+                Offsets.Span[j].Start = start;                
                 start += Offsets.Span[j].Length + 1;
             }
-
-            //offsets.CopyTo(Offsets.Span);
-
-            //Console.WriteLine($"---------------------------------------------------------------------------------");
-
-            //foreach (var o in Offsets.Span)
-            //{
-            //    Console.WriteLine($"{Text.Span.Slice(o.Start, o.Length).ToString()}");
-            //}
         }
 
         public string this[int i]
@@ -227,28 +212,37 @@
             }
             set
             {
-                Update(i, value);
-                //var offset = Offsets.Span[i];
+                var valueOffset = Offsets.Span[i];
+                var valueLengthDifference = value.Length - valueOffset.Length;
 
-                //if (value.Length == offset.Length)
-                //{
-                //    // if the length didn't change, just overwrite the data in place.
-                //    value.AsSpan().CopyTo(Text.Span.Slice(offset.Start));
-                //    return;
-                //}
+                if (valueLengthDifference == 0)
+                {
+                    // if the length didn't change, just overwrite the data in place.
+                    value.AsSpan().CopyTo(Text.Span.Slice(valueOffset.Start));
+                    return;
+                }
 
-                //var valueLengthDifference = value.Length - offset.Length;
+                var shiftChunkStart = valueOffset.Start + valueOffset.Length;
+                var shiftChunkLength = Text.Span.Length - shiftChunkStart - Slack - valueLengthDifference;
+                var shiftChunkDestination = shiftChunkStart + valueLengthDifference;
 
-                //var shiftChunkStart = offset.Start + offset.Length;
-                //var shiftChunkLength = Text.Span.Length - shiftChunkStart - Slack - valueLengthDifference;
+                Text.Span
+                    .Slice(shiftChunkStart, shiftChunkLength)
+                    .CopyTo(Text.Span.Slice(shiftChunkDestination));
 
-                ////var shiftChunkDestination = shiftChunkStart + valueLengthDifference;
+                value.AsSpan().CopyTo(Text.Span.Slice(valueOffset.Start));
 
-                //var s = Text.Span.Slice(shiftChunkStart, shiftChunkLength);
-                //s.CopyTo(Text.Span.Slice(shiftChunkStart + valueLengthDifference));
-                //value.AsSpan().CopyTo(Text.Span.Slice(offset.Start));
+                Slack -= valueLengthDifference;
 
-                //Slack -= valueLengthDifference;
+                Offsets.Span[i].Length = valueOffset.Length += valueLengthDifference;
+
+                var start = valueOffset.Start + valueOffset.Length + 1;
+
+                for (int j = i + 1; j < Offsets.Length; j++)
+                {
+                    Offsets.Span[j].Start = start;
+                    start += Offsets.Span[j].Length + 1;
+                }
             }
         }
 
