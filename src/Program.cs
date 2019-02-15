@@ -1,16 +1,66 @@
 ﻿namespace LazyCsvFile
 {
+    using Castle.DynamicProxy;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Dynamic;
     using System.IO;
     using System.IO.Compression;
     using System.Linq;
+    using System.Reflection;
 
     public class Program
     {
+        public class LazyCsvColumnAttribute : Attribute
+        {
+            public LazyCsvColumnAttribute(string name)
+            {
+                Name = name;
+            }
+
+            public string Name { get; set; }
+        }
+
+        public interface ICurFile
+        {
+            [LazyCsvColumn("identity/LineItemId")]
+            string LineItemId { get; set; }
+
+            void Foo();
+        }
+
+        public class Interceptor : IInterceptor
+        {
+            public void Intercept(IInvocation invocation)
+            {
+                Console.WriteLine($"Before target call {invocation.Method.Name}");
+                try
+                {
+                    invocation.ReturnValue = "foo";
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Target exception {ex.Message}");
+                    throw;
+                }
+                finally
+                {
+                    Console.WriteLine($"After target call {invocation.Method.Name}");
+                }
+            }
+        }
+
         static void Main(string[] args)
         {
+            var proxy = new ProxyGenerator()
+               .CreateInterfaceProxyWithoutTarget<ICurFile>(
+                   new Interceptor());
+
+            Console.WriteLine(proxy.LineItemId);
+
+            Console.ReadKey();
+            return;
             //using (var file = new StreamReader(@"C:\CUR\4005-.csv"))
             //using (var outf = new StreamWriter(@"C:\CUR\mediumfile.csv"))
             //{
