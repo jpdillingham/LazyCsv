@@ -48,6 +48,28 @@
             Stopwatch s = new Stopwatch();
             s.Start();
 
+            for (int i = 0; i < 10000000; i++)
+            {
+                var x = Guid.NewGuid().ToString();
+            }
+
+            s.Stop();
+            Console.WriteLine($"regular: {s.ElapsedMilliseconds}");
+
+            s.Reset();
+            s.Start();
+
+            for (int i = 0; i < 10000000; i++)
+            {
+                var x = Guid.NewGuid().ToString().ToUpper();
+            }
+
+
+            s.Stop();
+            Console.WriteLine($"regular: {s.ElapsedMilliseconds}");
+
+            Console.ReadKey();
+
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
@@ -91,7 +113,8 @@
                     //try
                     //{
                         Console.WriteLine(line["identity/LineItemId"]);
-                        //line["lineItem/UnblendedRate"] = (decimal.Parse(ubr) * 2).ToString();
+                        Console.WriteLine(line["identity/LineItemId"]);
+                    //line["lineItem/UnblendedRate"] = (decimal.Parse(ubr) * 2).ToString();
                     //}
                     //catch (Exception ex)
                     //{
