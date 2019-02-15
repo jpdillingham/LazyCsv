@@ -30,37 +30,8 @@
             void Foo();
         }
 
-        public class Interceptor : IInterceptor
-        {
-            public void Intercept(IInvocation invocation)
-            {
-                Console.WriteLine($"Before target call {invocation.Method.Name}");
-                try
-                {
-                    invocation.ReturnValue = "foo";
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Target exception {ex.Message}");
-                    throw;
-                }
-                finally
-                {
-                    Console.WriteLine($"After target call {invocation.Method.Name}");
-                }
-            }
-        }
-
         static void Main(string[] args)
         {
-            var proxy = new ProxyGenerator()
-               .CreateInterfaceProxyWithoutTarget<ICurFile>(
-                   new Interceptor());
-
-            Console.WriteLine(proxy.LineItemId);
-
-            Console.ReadKey();
-            return;
             //using (var file = new StreamReader(@"C:\CUR\4005-.csv"))
             //using (var outf = new StreamWriter(@"C:\CUR\mediumfile.csv"))
             //{
@@ -81,7 +52,7 @@
             sw.Start();
 
             Console.WriteLine($"Reading file...");
-            var lines = new LineCollection(@"c:\CUR\aws-cur-003.csv.gz", 10);
+            var lines = new LineCollection(@"c:\CUR\file.csv", 10);
             Console.WriteLine($"Done.");
 
             sw.Stop();
@@ -113,20 +84,21 @@
             {
                 foreach (var line in lines)
                 {
-                    //line["five"] = "!";
-                    var ubr = line["lineItem/UnblendedRate"];
-                    ubr = ubr == string.Empty ? "0" : ubr;
+                    ////line["five"] = "!";
+                    //var ubr = line["lineItem/UnblendedRate"];
+                    //ubr = ubr == string.Empty ? "0" : ubr;
 
-                    try
-                    {
-                        line["lineItem/UnblendedRate"] = (decimal.Parse(ubr) * 2).ToString();
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to parse value '{ubr}': {ex.Message}");
-                    }
-                    var rid = line["lineItem/ResourceId"];
-                    line["lineItem/ResourceId"] = rid == string.Empty ? "EMPTY" : rid;
+                    //try
+                    //{
+                        Console.WriteLine(line["identity/LineItemId"]);
+                        //line["lineItem/UnblendedRate"] = (decimal.Parse(ubr) * 2).ToString();
+                    //}
+                    //catch (Exception ex)
+                    //{
+                    //    Console.WriteLine($"Failed to parse value '{ubr}': {ex.Message}");
+                    //}
+                    //var rid = line["lineItem/ResourceId"];
+                    //line["lineItem/ResourceId"] = rid == string.Empty ? "EMPTY" : rid;
                 }
             }
 

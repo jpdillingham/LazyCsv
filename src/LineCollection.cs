@@ -1,5 +1,6 @@
 ﻿namespace LazyCsvFile
 {
+    using Castle.DynamicProxy;
     using System;
     using System.Collections;
     using System.Collections.Generic;
@@ -89,6 +90,17 @@
         public int Length;
     }
 
+
+    public class Interceptor : IInterceptor
+    {
+        public void Intercept(IInvocation invocation)
+        {
+            var type = invocation.Method.DeclaringType;
+
+            invocation.ReturnValue = "foo";
+        }
+    }
+
     public sealed class Line
     {
         private Memory<Offset> Offsets;
@@ -109,6 +121,11 @@
             Slack = slack;
 
             ComputeOffsets();
+        }
+
+        public T As<T>() where T : class
+        {
+            return new ProxyGenerator().CreateInterfaceProxyWithoutTarget<T>(new Interceptor());
         }
 
         private void ComputeOffsets()
@@ -226,20 +243,29 @@
         public Dictionary<string, int> Headers { get; } = new Dictionary<string, int>();
         public bool IsReadOnly => ((IList<Line>)Lines).IsReadOnly;
         public List<Line> Lines { get; } = new List<Line>();
-        Line IList<Line>.this[int index] { get => ((IList<Line>)Lines)[index]; set => ((IList<Line>)Lines)[index] = value; }
+        Line IList<Line>.this[int index]
+        {
+            get => ((IList<Line>)Lines)[index];
+            set => ((IList<Line>)Lines)[index] = value;
+        }
 
-        public Line this[int i] => Lines[i];
+        public Line this[int i]
+        {
+            get => Lines[i];
+            set => Lines[i] = value;
+        }
+
         public string this[int i, string column] => Lines[i][Headers[column]].ToString();
 
         public LineCollection(string file, int slack)
         {
             //var mem = File.ReadAllBytes(file);
 
-            //using (var reader = new StreamReader(file))
-            using (FileStream fileStream = File.Open(file, FileMode.Open))
+            //using (var sr = new StreamReader(file))
+            //using (FileStream fileStream = File.Open(file, FileMode.Open))
             //using (MemoryStream memstr = new MemoryStream(mem))
-            using (GZipStream inZip = new GZipStream(fileStream, CompressionMode.Decompress))
-            using (StreamReader reader = new StreamReader(inZip))
+            //using (GZipStream inZip = new GZipStream(fileStream, CompressionMode.Decompress))
+            using (StreamReader reader = new StreamReader(file))
             {
                 Headers = reader.ReadLine().Split(',')
                     .Select((x, i) => new KeyValuePair<string, int>(x, i))
