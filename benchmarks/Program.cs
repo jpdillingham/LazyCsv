@@ -1,4 +1,4 @@
-﻿namespace LazyCsvFile
+﻿namespace LazyCsv.Benchmarks
 {
     using Castle.DynamicProxy;
     using System;
@@ -74,7 +74,7 @@
             sw.Start();
 
             Console.WriteLine($"Reading file...");
-            var lines = new LineCollection(@"c:\CUR\file.csv", 10);
+            var lines = new LazyCsvFile(@"c:\CUR\file.csv", 10);
             Console.WriteLine($"Done.");
 
             sw.Stop();
