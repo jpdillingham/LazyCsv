@@ -1,100 +1,179 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 
 namespace LazyCsv
 {
-    public class LazyCsvFile : IList<LazyCsvLine>
+    [Flags]
+    public enum LazyCsvFileOptions
     {
-        public int Count => ((IList<LazyCsvLine>)Lines).Count;
-        public Dictionary<string, int> Headers { get; } = new Dictionary<string, int>();
-        public bool IsReadOnly => ((IList<LazyCsvLine>)Lines).IsReadOnly;
-        public List<LazyCsvLine> Lines { get; } = new List<LazyCsvLine>();
-        LazyCsvLine IList<LazyCsvLine>.this[int index]
+        None = 0,
+        ForceGZip = 1,
+        PreventLineReallocation = 2,
+    }
+
+    public class LazyCsvFile : IDisposable
+    {
+        private bool disposedValue = false;
+
+        public LazyCsvFile(string file, int lineSlack)
+            : this(file, lineSlack, LazyCsvFileOptions.None)
         {
-            get => ((IList<LazyCsvLine>)Lines)[index];
-            set => ((IList<LazyCsvLine>)Lines)[index] = value;
         }
 
-        public LazyCsvLine this[int i]
+        public LazyCsvFile(string file, LazyCsvFileOptions options)
+            : this(file, 0, options)
         {
-            get => Lines[i];
-            set => Lines[i] = value;
         }
 
-        public string this[int i, string column] => Lines[i][Headers[column]].ToString();
-
-        public LazyCsvFile(string file, int slack)
+        public LazyCsvFile(string file, int lineSlack, LazyCsvFileOptions options)
         {
-            //var mem = File.ReadAllBytes(file);
+            File = file;
+            LineSlack = lineSlack;
+            Options = options;
 
-            //using (var sr = new StreamReader(file))
-            //using (FileStream fileStream = File.Open(file, FileMode.Open))
-            //using (MemoryStream memstr = new MemoryStream(mem))
-            //using (GZipStream inZip = new GZipStream(fileStream, CompressionMode.Decompress))
-            using (StreamReader reader = new StreamReader(file))
+            using (var csv = new CsvStream(file, options))
             {
-                Headers = reader.ReadLine().Split(',')
+                HeaderDictionary = csv.StreamReader.ReadLine().Split(',')
                     .Select((x, i) => new KeyValuePair<string, int>(x, i))
                     .ToDictionary(x => x.Key, x => x.Value);
-
-                while (!reader.EndOfStream)
-                {
-                    Lines.Add(new LazyCsvLine(reader.ReadLine(), Headers, slack));
-                }
             }
         }
 
-        public void Add(LazyCsvLine item)
+        public string File { get; }
+        public IReadOnlyDictionary<string, int> Headers => new ReadOnlyDictionary<string, int>(HeaderDictionary);
+        public int LineSlack { get; }
+        public LazyCsvFileOptions Options { get; }
+        private Dictionary<string, int> HeaderDictionary { get; } = new Dictionary<string, int>();
+
+        private CsvStream Stream { get; set; }
+
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
         {
-            ((IList<LazyCsvLine>)Lines).Add(item);
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above. GC.SuppressFinalize(this);
         }
 
-        public void Clear()
+        public IEnumerable<LazyCsvLine> ReadAllLines()
         {
-            ((IList<LazyCsvLine>)Lines).Clear();
+            using (var csv = new CsvStream(File, Options))
+            {
+                // discard headers
+                csv.StreamReader.ReadLine();
+
+                List<LazyCsvLine> lines = new List<LazyCsvLine>();
+
+                while (!csv.StreamReader.EndOfStream)
+                {
+                    lines.Add(new LazyCsvLine(csv.StreamReader.ReadLine(), HeaderDictionary, LineSlack));
+                }
+
+                return lines;
+            }
         }
 
-        public bool Contains(LazyCsvLine item)
+        public void ResetPosition() => Stream = new CsvStream(File, Options);
+
+        public bool EndOfFile => Stream?.StreamReader.EndOfStream ?? false;
+
+        public LazyCsvLine ReadLine()
         {
-            return ((IList<LazyCsvLine>)Lines).Contains(item);
+            if (Stream == null)
+            {
+                Stream = new CsvStream(File, Options);
+            }
+
+            return new LazyCsvLine(Stream.StreamReader.ReadLine(), HeaderDictionary, LineSlack);
         }
 
-        public void CopyTo(LazyCsvLine[] array, int arrayIndex)
+        protected virtual void Dispose(bool disposing)
         {
-            ((IList<LazyCsvLine>)Lines).CopyTo(array, arrayIndex);
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    // TODO: dispose managed state (managed objects).
+                    Stream?.Dispose();
+                }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
+            }
         }
 
-        public IEnumerator<LazyCsvLine> GetEnumerator()
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources. ~LazyCsvFile() {
+        // // Do not change this code. Put cleanup code in Dispose(bool disposing) above. Dispose(false); }
+        private class CsvStream : IDisposable
         {
-            return ((IList<LazyCsvLine>)Lines).GetEnumerator();
-        }
+            private readonly byte[] gzipFlags = new byte[] { 0x1F, 0x8B };
 
-        public int IndexOf(LazyCsvLine item)
-        {
-            return ((IList<LazyCsvLine>)Lines).IndexOf(item);
-        }
+            private bool disposedValue = false;
 
-        public void Insert(int index, LazyCsvLine item)
-        {
-            ((IList<LazyCsvLine>)Lines).Insert(index, item);
-        }
+            public CsvStream(string file, LazyCsvFileOptions options)
+            {
+                FileStream = new FileStream(file, FileMode.Open);
 
-        public bool Remove(LazyCsvLine item)
-        {
-            return ((IList<LazyCsvLine>)Lines).Remove(item);
-        }
+                if (options.HasFlag(LazyCsvFileOptions.ForceGZip) || IsGZipped(FileStream))
+                {
+                    GZipStream = new GZipStream(FileStream, CompressionMode.Decompress);
+                    StreamReader = new StreamReader(GZipStream);
+                }
+                else
+                {
+                    StreamReader = new StreamReader(FileStream);
+                }
+            }
 
-        public void RemoveAt(int index)
-        {
-            ((IList<LazyCsvLine>)Lines).RemoveAt(index);
-        }
+            public StreamReader StreamReader { get; }
+            private FileStream FileStream { get; }
+            private GZipStream GZipStream { get; }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IList<LazyCsvLine>)Lines).GetEnumerator();
+            // This code added to correctly implement the disposable pattern.
+            public void Dispose()
+            {
+                // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+                Dispose(true);
+                // TODO: uncomment the following line if the finalizer is overridden above. GC.SuppressFinalize(this);
+            }
+
+            protected virtual void Dispose(bool disposing)
+            {
+                if (!disposedValue)
+                {
+                    if (disposing)
+                    {
+                        StreamReader?.Dispose();
+                        GZipStream?.Dispose();
+                        FileStream?.Dispose();
+                    }
+
+                    // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                    // TODO: set large fields to null.
+
+                    disposedValue = true;
+                }
+            }
+
+            private bool IsGZipped(FileStream fileStream)
+            {
+                var fileFlags = new byte[2];
+                fileStream.Read(fileFlags, 0, 2);
+
+                fileStream.Position = 0;
+
+                return fileFlags.AsSpan().SequenceEqual(gzipFlags.AsSpan());
+            }
+
+            // To detect redundant calls
+            // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources. ~CsvStream()
+            // { // Do not change this code. Put cleanup code in Dispose(bool disposing) above. Dispose(false); }
         }
     }
 }
