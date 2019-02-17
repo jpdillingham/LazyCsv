@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -19,6 +18,7 @@ namespace LazyCsv
     public class LazyCsvFile : IDisposable
     {
         private bool disposedValue = false;
+
         public LazyCsvFile(string file, int lineSlack)
             : this(file, lineSlack, LazyCsvFileOptions.None)
         {
@@ -34,7 +34,7 @@ namespace LazyCsv
             File = file;
             LineSlack = lineSlack;
             Options = options;
-            
+
             using (var csv = new CsvStream(file, options))
             {
                 HeaderDictionary = csv.StreamReader.ReadLine().Split(',')
@@ -49,14 +49,14 @@ namespace LazyCsv
         public LazyCsvFileOptions Options { get; }
         private Dictionary<string, int> HeaderDictionary { get; } = new Dictionary<string, int>();
 
-        private CsvStream Stream { get; }
+        private CsvStream Stream { get; set; }
+
         // This code added to correctly implement the disposable pattern.
         public void Dispose()
         {
             // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
             Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above.
-            // GC.SuppressFinalize(this);
+            // TODO: uncomment the following line if the finalizer is overridden above. GC.SuppressFinalize(this);
         }
 
         public IEnumerable<LazyCsvLine> ReadAllLines()
@@ -77,7 +77,19 @@ namespace LazyCsv
             }
         }
 
-         // To detect redundant calls
+        public void ResetPosition() => Stream = new CsvStream(File, Options);
+
+        public bool EndOfFile => Stream?.StreamReader.EndOfStream ?? false;
+
+        public LazyCsvLine ReadLine()
+        {
+            if (Stream == null)
+            {
+                Stream = new CsvStream(File, Options);
+            }
+
+            return new LazyCsvLine(Stream.StreamReader.ReadLine(), HeaderDictionary, LineSlack);
+        }
 
         protected virtual void Dispose(bool disposing)
         {
@@ -96,14 +108,13 @@ namespace LazyCsv
             }
         }
 
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-        // ~LazyCsvFile() {
-        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-        //   Dispose(false);
-        // }
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources. ~LazyCsvFile() {
+        // // Do not change this code. Put cleanup code in Dispose(bool disposing) above. Dispose(false); }
         private class CsvStream : IDisposable
         {
             private readonly byte[] gzipFlags = new byte[] { 0x1F, 0x8B };
+
+            private bool disposedValue = false;
 
             public CsvStream(string file, LazyCsvFileOptions options)
             {
@@ -120,21 +131,17 @@ namespace LazyCsv
                 }
             }
 
+            public StreamReader StreamReader { get; }
             private FileStream FileStream { get; }
             private GZipStream GZipStream { get; }
-            public StreamReader StreamReader { get; }
-            private bool IsGZipped(FileStream fileStream)
+
+            // This code added to correctly implement the disposable pattern.
+            public void Dispose()
             {
-                var fileFlags = new byte[2];
-                fileStream.Read(fileFlags, 0, 2);
-
-                fileStream.Position = 0;
-
-                return fileFlags.AsSpan().SequenceEqual(gzipFlags.AsSpan());
+                // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+                Dispose(true);
+                // TODO: uncomment the following line if the finalizer is overridden above. GC.SuppressFinalize(this);
             }
-
-            #region IDisposable Support
-            private bool disposedValue = false; // To detect redundant calls
 
             protected virtual void Dispose(bool disposing)
             {
@@ -154,21 +161,19 @@ namespace LazyCsv
                 }
             }
 
-            // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
-            // ~CsvStream() {
-            //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            //   Dispose(false);
-            // }
-
-            // This code added to correctly implement the disposable pattern.
-            public void Dispose()
+            private bool IsGZipped(FileStream fileStream)
             {
-                // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-                Dispose(true);
-                // TODO: uncomment the following line if the finalizer is overridden above.
-                // GC.SuppressFinalize(this);
+                var fileFlags = new byte[2];
+                fileStream.Read(fileFlags, 0, 2);
+
+                fileStream.Position = 0;
+
+                return fileFlags.AsSpan().SequenceEqual(gzipFlags.AsSpan());
             }
-            #endregion
+
+            // To detect redundant calls
+            // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources. ~CsvStream()
+            // { // Do not change this code. Put cleanup code in Dispose(bool disposing) above. Dispose(false); }
         }
     }
 }

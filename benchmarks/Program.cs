@@ -53,7 +53,7 @@
 
             Console.WriteLine($"Reading file...");
             var file = new LazyCsvFile(@"c:\CUR\aws-cur-003.csv.gz", 10);
-            var lines = file.ReadAllLines();
+            //var lines = file.ReadAllLines();
             Console.WriteLine($"Done.");
 
             sw.Stop();
@@ -82,34 +82,42 @@
             //}
 
 
-            for (int i = 0; i < 1; i++)
+            //for (int i = 0; i < 1; i++)
+            //{
+            //    foreach (var line in lines)
+            //    {
+            //        ////line["five"] = "!";
+            //        var ubr = line["lineItem/UnblendedRate"];
+            //        ubr = ubr == string.Empty ? "0" : ubr;
+
+            //        try
+            //        {
+            //            //Console.WriteLine(line["identity/LineItemId"]);
+            //            //Console.WriteLine(line["identity/LineItemId"]);
+            //            line["lineItem/UnblendedRate"] = (decimal.Parse(ubr) * 2).ToString();
+            //            var rid = line["lineItem/ResourceId"];
+            //            line["lineItem/ResourceId"] = rid == string.Empty ? "EMPTY" : rid;
+            //        }
+            //        catch (Exception ex)
+            //        {
+            //            Console.WriteLine($"Failed to parse value '{ubr}': {ex.Message}");
+            //        }
+
+            //    }
+            //}
+
+            int lines = 0;
+
+            while (!file.EndOfFile)
             {
-                foreach (var line in lines)
-                {
-                    ////line["five"] = "!";
-                    var ubr = line["lineItem/UnblendedRate"];
-                    ubr = ubr == string.Empty ? "0" : ubr;
-
-                    try
-                    {
-                        //Console.WriteLine(line["identity/LineItemId"]);
-                        //Console.WriteLine(line["identity/LineItemId"]);
-                        line["lineItem/UnblendedRate"] = (decimal.Parse(ubr) * 2).ToString();
-                        var rid = line["lineItem/ResourceId"];
-                        line["lineItem/ResourceId"] = rid == string.Empty ? "EMPTY" : rid;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to parse value '{ubr}': {ex.Message}");
-                    }
-
-                }
+                var x = file.ReadLine()[0];
+                lines++;
             }
 
 
             sw.Stop();
 
-            Console.WriteLine($"Iterated over {lines.Count()} lines in {sw.ElapsedMilliseconds}ms");
+            Console.WriteLine($"Iterated over {lines} lines in {sw.ElapsedMilliseconds}ms");
 
             //sw.Reset();
             //sw.Start();
@@ -129,19 +137,19 @@
             sw.Reset();
             sw.Start();
 
-            using (var fs = File.Open(@"C:\CUR\file.out.csv", FileMode.Create))
-            //using (var gzip = new GZipStream(fs, CompressionLevel.Fastest))
-            using (var writer = new StreamWriter(fs))
-            {
-                foreach (var line in lines)
-                {
-                    //Console.WriteLine(line);
-                    writer.WriteLine(line);
-                }
-            }
+            //using (var fs = File.Open(@"C:\CUR\file.out.csv", FileMode.Create))
+            ////using (var gzip = new GZipStream(fs, CompressionLevel.Fastest))
+            //using (var writer = new StreamWriter(fs))
+            //{
+            //    foreach (var line in lines)
+            //    {
+            //        //Console.WriteLine(line);
+            //        writer.WriteLine(line);
+            //    }
+            //}
 
-            sw.Stop();
-            Console.WriteLine($"Saved {lines.Count()} lines to output file in {sw.ElapsedMilliseconds}ms");
+            //sw.Stop();
+            //Console.WriteLine($"Saved {lines.Count()} lines to output file in {sw.ElapsedMilliseconds}ms");
 
             s.Stop();
             Console.WriteLine($"Total time: {s.ElapsedMilliseconds}ms");
