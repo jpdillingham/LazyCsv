@@ -48,33 +48,33 @@
             Stopwatch s = new Stopwatch();
             s.Start();
 
-            for (int i = 0; i < 10000000; i++)
-            {
-                var x = Guid.NewGuid().ToString();
-            }
+            //for (int i = 0; i < 10000000; i++)
+            //{
+            //    var x = Guid.NewGuid().ToString();
+            //}
 
-            s.Stop();
-            Console.WriteLine($"regular: {s.ElapsedMilliseconds}");
+            //s.Stop();
+            //Console.WriteLine($"regular: {s.ElapsedMilliseconds}");
 
-            s.Reset();
-            s.Start();
+            //s.Reset();
+            //s.Start();
 
-            for (int i = 0; i < 10000000; i++)
-            {
-                var x = Guid.NewGuid().ToString().ToUpper();
-            }
+            //for (int i = 0; i < 10000000; i++)
+            //{
+            //    var x = Guid.NewGuid().ToString().ToUpper();
+            //}
 
 
-            s.Stop();
-            Console.WriteLine($"regular: {s.ElapsedMilliseconds}");
+            //s.Stop();
+            //Console.WriteLine($"regular: {s.ElapsedMilliseconds}");
 
-            Console.ReadKey();
+            //Console.ReadKey();
 
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
             Console.WriteLine($"Reading file...");
-            var lines = new LazyCsvFile(@"c:\CUR\file.csv", 10);
+            var lines = new LazyCsvFile(@"c:\CUR\aws-cur-003.csv", 10);
             Console.WriteLine($"Done.");
 
             sw.Stop();
@@ -107,21 +107,21 @@
                 foreach (var line in lines)
                 {
                     ////line["five"] = "!";
-                    //var ubr = line["lineItem/UnblendedRate"];
-                    //ubr = ubr == string.Empty ? "0" : ubr;
+                    var ubr = line["lineItem/UnblendedRate"];
+                    ubr = ubr == string.Empty ? "0" : ubr;
 
-                    //try
-                    //{
-                        Console.WriteLine(line["identity/LineItemId"]);
-                        Console.WriteLine(line["identity/LineItemId"]);
-                    //line["lineItem/UnblendedRate"] = (decimal.Parse(ubr) * 2).ToString();
-                    //}
-                    //catch (Exception ex)
-                    //{
-                    //    Console.WriteLine($"Failed to parse value '{ubr}': {ex.Message}");
-                    //}
-                    //var rid = line["lineItem/ResourceId"];
-                    //line["lineItem/ResourceId"] = rid == string.Empty ? "EMPTY" : rid;
+                    try
+                    {
+                        //Console.WriteLine(line["identity/LineItemId"]);
+                        //Console.WriteLine(line["identity/LineItemId"]);
+                        line["lineItem/UnblendedRate"] = (decimal.Parse(ubr) * 2).ToString();
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to parse value '{ubr}': {ex.Message}");
+                    }
+                    var rid = line["lineItem/ResourceId"];
+                    line["lineItem/ResourceId"] = rid == string.Empty ? "EMPTY" : rid;
                 }
             }
 

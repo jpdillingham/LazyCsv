@@ -19,6 +19,7 @@ namespace LazyCsv
     public sealed class LazyCsvLine
     {
         private Memory<Offset> Offsets;
+        bool offsetsComputed = false;
 
         private Memory<char> Text;
 
@@ -35,7 +36,7 @@ namespace LazyCsv
             Headers = headers;
             Slack = slack;
 
-            ComputeOffsets();
+            //ComputeOffsets();
         }
 
         private void ComputeOffsets()
@@ -83,6 +84,7 @@ namespace LazyCsv
             }
 
             offsets.CopyTo(Offsets.Span);
+            offsetsComputed = true;
         }
 
         public string this[string column]
@@ -101,10 +103,13 @@ namespace LazyCsv
         {
             get
             {
+                if (!offsetsComputed) ComputeOffsets();
                 return Text.Span.Slice(Offsets.Span[i].Start, Offsets.Span[i].Length).ToString();
             }
             set
             {
+                if (!offsetsComputed) ComputeOffsets();
+
                 var valueOffset = Offsets.Span[i];
                 var valueLengthDifference = value.Length - valueOffset.Length;
 
