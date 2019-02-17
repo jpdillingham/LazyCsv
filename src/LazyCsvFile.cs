@@ -1,100 +1,134 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 
 namespace LazyCsv
 {
-    public class LazyCsvFile : IList<LazyCsvLine>
+    [Flags]
+    public enum LazyCsvFileOptions
     {
-        public int Count => ((IList<LazyCsvLine>)Lines).Count;
-        public Dictionary<string, int> Headers { get; } = new Dictionary<string, int>();
-        public bool IsReadOnly => ((IList<LazyCsvLine>)Lines).IsReadOnly;
-        public List<LazyCsvLine> Lines { get; } = new List<LazyCsvLine>();
-        LazyCsvLine IList<LazyCsvLine>.this[int index]
+        None = 0,
+        ForceGZip = 1,
+        PreventLineReallocation = 2,
+    }
+
+    public class LazyCsvFile : IDisposable
+    {
+        private readonly byte[] gzipFlags = new byte[] { 0x1F, 0x8B };
+
+        public string File { get; }
+        public LazyCsvFileOptions Options { get; }
+        public int LineSlack { get; }
+        public IReadOnlyDictionary<string, int> Headers => new ReadOnlyDictionary<string, int>(HeaderDictionary);
+        private Dictionary<string, int> HeaderDictionary { get; } = new Dictionary<string, int>();
+
+        private FileStream FileStream { get; }
+        private GZipStream GZipStream { get; }
+        private StreamReader StreamReader { get; }
+
+        public LazyCsvFile(string file, int lineSlack)
+            : this(file, lineSlack, LazyCsvFileOptions.None)
         {
-            get => ((IList<LazyCsvLine>)Lines)[index];
-            set => ((IList<LazyCsvLine>)Lines)[index] = value;
+
         }
 
-        public LazyCsvLine this[int i]
+        public LazyCsvFile(string file, LazyCsvFileOptions options)
+            : this(file, 0, options)
         {
-            get => Lines[i];
-            set => Lines[i] = value;
         }
 
-        public string this[int i, string column] => Lines[i][Headers[column]].ToString();
-
-        public LazyCsvFile(string file, int slack)
+        public LazyCsvFile(string file, int lineSlack, LazyCsvFileOptions options)
         {
-            //var mem = File.ReadAllBytes(file);
+            File = file;
+            LineSlack = lineSlack;
+            Options = options;
 
-            //using (var sr = new StreamReader(file))
-            //using (FileStream fileStream = File.Open(file, FileMode.Open))
-            //using (MemoryStream memstr = new MemoryStream(mem))
-            //using (GZipStream inZip = new GZipStream(fileStream, CompressionMode.Decompress))
-            using (StreamReader reader = new StreamReader(file))
+            FileStream = new FileStream(file, FileMode.Open);
+
+            if (options.HasFlag(LazyCsvFileOptions.ForceGZip) || IsGZipped(FileStream))
             {
-                Headers = reader.ReadLine().Split(',')
-                    .Select((x, i) => new KeyValuePair<string, int>(x, i))
-                    .ToDictionary(x => x.Key, x => x.Value);
+                GZipStream = new GZipStream(FileStream, CompressionMode.Decompress);
+                StreamReader = new StreamReader(GZipStream);
+            }
+            else
+            {
+                StreamReader = new StreamReader(FileStream);
+            }
 
-                while (!reader.EndOfStream)
+            HeaderDictionary = StreamReader.ReadLine().Split(',')
+                .Select((x, i) => new KeyValuePair<string, int>(x, i))
+                .ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        private bool IsGZipped(FileStream fileStream)
+        {
+            var fileFlags = new byte[2];
+            fileStream.Read(fileFlags, 0, 2);
+
+            fileStream.Position = 0;
+
+            return fileFlags.AsSpan().SequenceEqual(gzipFlags.AsSpan());
+        }
+
+        public IEnumerable<LazyCsvLine> ReadAllLines()
+        {
+            // rewind the reader to the beginning of the file
+            FileStream.Position = 0;
+            StreamReader.DiscardBufferedData();
+
+            // discard headers
+            StreamReader.ReadLine();
+
+            List<LazyCsvLine> lines = new List<LazyCsvLine>();
+
+            while (!StreamReader.EndOfStream)
+            {
+                lines.Add(new LazyCsvLine(StreamReader.ReadLine(), HeaderDictionary, LineSlack));
+            }
+
+            return lines;
+        }
+
+        #region IDisposable Support
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
                 {
-                    Lines.Add(new LazyCsvLine(reader.ReadLine(), Headers, slack));
+                    // TODO: dispose managed state (managed objects).
+                    StreamReader?.Dispose();
+                    GZipStream?.Dispose();
+                    FileStream?.Dispose();
                 }
+
+                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
+                // TODO: set large fields to null.
+
+                disposedValue = true;
             }
         }
 
-        public void Add(LazyCsvLine item)
-        {
-            ((IList<LazyCsvLine>)Lines).Add(item);
-        }
+        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources.
+        // ~LazyCsvFile() {
+        //   // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        //   Dispose(false);
+        // }
 
-        public void Clear()
+        // This code added to correctly implement the disposable pattern.
+        public void Dispose()
         {
-            ((IList<LazyCsvLine>)Lines).Clear();
+            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+            Dispose(true);
+            // TODO: uncomment the following line if the finalizer is overridden above.
+            // GC.SuppressFinalize(this);
         }
-
-        public bool Contains(LazyCsvLine item)
-        {
-            return ((IList<LazyCsvLine>)Lines).Contains(item);
-        }
-
-        public void CopyTo(LazyCsvLine[] array, int arrayIndex)
-        {
-            ((IList<LazyCsvLine>)Lines).CopyTo(array, arrayIndex);
-        }
-
-        public IEnumerator<LazyCsvLine> GetEnumerator()
-        {
-            return ((IList<LazyCsvLine>)Lines).GetEnumerator();
-        }
-
-        public int IndexOf(LazyCsvLine item)
-        {
-            return ((IList<LazyCsvLine>)Lines).IndexOf(item);
-        }
-
-        public void Insert(int index, LazyCsvLine item)
-        {
-            ((IList<LazyCsvLine>)Lines).Insert(index, item);
-        }
-
-        public bool Remove(LazyCsvLine item)
-        {
-            return ((IList<LazyCsvLine>)Lines).Remove(item);
-        }
-
-        public void RemoveAt(int index)
-        {
-            ((IList<LazyCsvLine>)Lines).RemoveAt(index);
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IList<LazyCsvLine>)Lines).GetEnumerator();
-        }
+        #endregion
     }
 }
