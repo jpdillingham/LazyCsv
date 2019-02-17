@@ -35,7 +35,7 @@ namespace LazyCsv
             LineSlack = lineSlack;
             Options = options;
 
-            using (var csv = new CsvStream(file, options))
+            using (var csv = new CsvStreamReader(file, options))
             {
                 HeaderDictionary = csv.StreamReader.ReadLine().Split(',')
                     .Select((x, i) => new KeyValuePair<string, int>(x, i))
@@ -49,7 +49,7 @@ namespace LazyCsv
         public LazyCsvFileOptions Options { get; }
         private Dictionary<string, int> HeaderDictionary { get; } = new Dictionary<string, int>();
 
-        private CsvStream Stream { get; set; }
+        private CsvStreamReader Reader { get; set; }
 
         // This code added to correctly implement the disposable pattern.
         public void Dispose()
@@ -61,7 +61,7 @@ namespace LazyCsv
 
         public IEnumerable<LazyCsvLine> ReadAllLines()
         {
-            using (var csv = new CsvStream(File, Options))
+            using (var csv = new CsvStreamReader(File, Options))
             {
                 // discard headers
                 csv.StreamReader.ReadLine();
@@ -77,18 +77,19 @@ namespace LazyCsv
             }
         }
 
-        public void ResetPosition() => Stream = new CsvStream(File, Options);
+        public void ResetPosition() => Reader = new CsvStreamReader(File, Options);
 
-        public bool EndOfFile => Stream?.StreamReader.EndOfStream ?? false;
+        public bool EndOfFile => Reader?.StreamReader.EndOfStream ?? false;
 
         public LazyCsvLine ReadLine()
         {
-            if (Stream == null)
+            if (Reader == null)
             {
-                Stream = new CsvStream(File, Options);
+                Reader = new CsvStreamReader(File, Options);
+                Reader.StreamReader.ReadLine(); // discard headers
             }
 
-            return new LazyCsvLine(Stream.StreamReader.ReadLine(), HeaderDictionary, LineSlack);
+            return new LazyCsvLine(Reader.StreamReader.ReadLine(), HeaderDictionary, LineSlack);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -98,7 +99,7 @@ namespace LazyCsv
                 if (disposing)
                 {
                     // TODO: dispose managed state (managed objects).
-                    Stream?.Dispose();
+                    Reader?.Dispose();
                 }
 
                 // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
@@ -110,13 +111,13 @@ namespace LazyCsv
 
         // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources. ~LazyCsvFile() {
         // // Do not change this code. Put cleanup code in Dispose(bool disposing) above. Dispose(false); }
-        private class CsvStream : IDisposable
+        private class CsvStreamReader : IDisposable
         {
             private readonly byte[] gzipFlags = new byte[] { 0x1F, 0x8B };
 
             private bool disposedValue = false;
 
-            public CsvStream(string file, LazyCsvFileOptions options)
+            public CsvStreamReader(string file, LazyCsvFileOptions options)
             {
                 FileStream = new FileStream(file, FileMode.Open);
 

@@ -108,10 +108,36 @@
 
             int lines = 0;
 
-            while (!file.EndOfFile)
+
+            using (var fs = File.Open(@"C:\CUR\file.out.csv", FileMode.Create))
+            //using (var gzip = new GZipStream(fs, CompressionLevel.Fastest))
+            using (var writer = new StreamWriter(fs))
             {
-                var x = file.ReadLine()[0];
-                lines++;
+
+                while (!file.EndOfFile)
+                {
+                    var line = file.ReadLine();
+
+                    ////line["five"] = "!";
+                    var ubr = line["lineItem/UnblendedRate"];
+                    ubr = ubr == string.Empty ? "0" : ubr;
+
+                    try
+                    {
+                        //Console.WriteLine(line["identity/LineItemId"]);
+                        //Console.WriteLine(line["identity/LineItemId"]);
+                        line["lineItem/UnblendedRate"] = (decimal.Parse(ubr) * 2).ToString();
+                        var rid = line["lineItem/ResourceId"];
+                        line["lineItem/ResourceId"] = rid == string.Empty ? "EMPTY" : rid;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to parse value '{ubr}': {ex.Message}");
+                    }
+                    lines++;
+
+                    writer.WriteLine(line);
+                }
             }
 
 
