@@ -3,13 +3,13 @@
     using System;
     using System.Collections.Generic;
 
-    public class StringSplitLine
+    public class StringArrayLine
     {
         public Memory<string> Text;
 
         private readonly Dictionary<string, int> Headers;
 
-        public StringSplitLine(string text, Dictionary<string, int> headers, int slack)
+        public StringArrayLine(string text, Dictionary<string, int> headers, int slack)
         {
             Text = SplitCsvLine(text).ToArray();
             Headers = headers;

@@ -1,35 +1,13 @@
 ﻿namespace LazyCsv.Benchmarks
 {
-    using Castle.DynamicProxy;
     using System;
-    using System.Collections.Generic;
     using System.Diagnostics;
-    using System.Dynamic;
     using System.IO;
     using System.IO.Compression;
     using System.Linq;
-    using System.Reflection;
 
     public class Program
     {
-        public class LazyCsvColumnAttribute : Attribute
-        {
-            public LazyCsvColumnAttribute(string name)
-            {
-                Name = name;
-            }
-
-            public string Name { get; set; }
-        }
-
-        public interface ICurFile
-        {
-            [LazyCsvColumn("identity/LineItemId")]
-            string LineItemId { get; set; }
-
-            void Foo();
-        }
-
         static void Main(string[] args)
         {
             //using (var file = new StreamReader(@"C:\CUR\4005-.csv"))
@@ -164,50 +142,6 @@
 
             s.Stop();
             Console.WriteLine($"Total time: {s.ElapsedMilliseconds}ms");
-
-            //Span<char> line = new Memory<char>("1,\"2,3\",4,".ToCharArray()).Span;
-
-            //int start = 0;
-            //bool quoted = false;
-
-            //var offsets = new List<(int start, int length)>();
-
-            //for (int i = 0; i < line.Length; i++)
-            //{
-            //    char c = line[i];
-
-            //    Console.WriteLine($"{i}/{line.Length}: {c}");
-
-            //    if (c == '"' || c == '\'')
-            //    {
-            //        quoted = !quoted;
-            //    }
-
-            //    if (i == line.Length - 1)
-            //    {
-            //        if (c == ',')
-            //        {
-            //            offsets.Add((start, i - (start)));
-            //            offsets.Add((start, 0));
-            //        }
-            //        else
-            //        {
-            //            offsets.Add((start, i - (start - 1)));
-            //        }
-            //    }
-            //    else if (!quoted && c == ',')
-            //    {
-            //        offsets.Add((start, i - (start)));
-            //        start = i + 1;
-            //    }
-            //}
-
-            //Console.WriteLine($"{line.ToString()}");
-
-            //foreach(var offset in offsets)
-            //{
-            //    Console.WriteLine($"[{offset.start}, {offset.length}]: {line.Slice(offset.start, offset.length).ToString()}");
-            //}
 
             Console.ReadKey();
         }
