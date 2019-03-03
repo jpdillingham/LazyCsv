@@ -70,7 +70,7 @@ namespace LazyCsv
 
                 while (!csv.StreamReader.EndOfStream)
                 {
-                    lines.Add(new LazyCsvLine(csv.StreamReader.ReadLine(), HeaderDictionary, LineSlack));
+                    lines.Add(new LazyCsvLine(csv.StreamReader.ReadLine(), HeaderDictionary, LineSlack, Options.HasFlag(LazyCsvFileOptions.PreventLineReallocation)));
                 }
 
                 return lines;
@@ -89,7 +89,7 @@ namespace LazyCsv
                 Reader.StreamReader.ReadLine(); // discard headers
             }
 
-            return new LazyCsvLine(Reader.StreamReader.ReadLine(), HeaderDictionary, LineSlack);
+            return new LazyCsvLine(Reader.StreamReader.ReadLine(), HeaderDictionary, LineSlack, Options.HasFlag(LazyCsvFileOptions.PreventLineReallocation));
         }
 
         protected virtual void Dispose(bool disposing)
