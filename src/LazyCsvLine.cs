@@ -6,30 +6,10 @@
 
     public sealed class LazyCsvLine
     {
-        public struct Offset
-        {
-            public Offset(int start, int length)
-            {
-                Start = start;
-                Length = length;
-            }
-
-            public int Start;
-            public int Length;
-        }
-
-        public Memory<char> Text { get; private set; }
-
         private readonly Dictionary<string, int> _headers;
         private Memory<Offset> _offsets;
 
-        public IReadOnlyDictionary<string, int> Headers => new ReadOnlyDictionary<string, int>(_headers);
-        public IEnumerable<Offset> Offsets => _offsets.ToArray();
-        public int InitialSlack { get; }
-        public bool PreventReallocation { get; }
-        public int Slack { get; private set; }
-
-        public LazyCsvLine(string text, Dictionary<string, int> headers = null, int? slack = null, bool preventReallocation = false)
+        public LazyCsvLine(string text, Dictionary<string, int> headers, int? slack = null, bool preventReallocation = false)
         {
             Slack = slack ?? (int)Math.Ceiling(text.Length * 0.1d); // default to 10% of string length
             InitialSlack = Slack;
@@ -45,41 +25,12 @@
             ComputeOffsets();
         }
 
-        private void ComputeOffsets()
-        {
-            int len = Text.Length - Slack;
-
-            Span<char> span = stackalloc char[len];
-            Text.Span.Slice(0, len).CopyTo(span);
-
-            Span<Offset> offsets = stackalloc Offset[_headers.Count];
-
-            bool quoted = false;
-            int start = 0;
-            int offsetNum = 0;
-
-            for (int i = 0; i < len; i++)
-            {
-                switch (span[i])
-                {
-                    case ',':
-                        if (!quoted)
-                        {
-                            offsets[offsetNum] = new Offset(start, i - start);
-                            offsetNum++;
-                            start = i + 1;
-                        }
-                        break;
-                    case '\'':
-                    case '"':
-                        quoted = !quoted;
-                        break;
-                }
-            }
-
-            offsets[offsetNum] = new Offset(start, len - start);
-            offsets.CopyTo(_offsets.Span);
-        }
+        public IReadOnlyDictionary<string, int> Headers => new ReadOnlyDictionary<string, int>(_headers);
+        public int InitialSlack { get; }
+        public IEnumerable<Offset> Offsets => _offsets.ToArray();
+        public bool PreventReallocation { get; }
+        public int Slack { get; private set; }
+        public Memory<char> Text { get; private set; }
 
         public string this[string column]
         {
@@ -112,8 +63,8 @@
                 }
                 else if (valueLengthDifference > Slack)
                 {
-                    // if the new data will exceed the amount of available slack, reallocate the backing string
-                    // to accomodate the new value + slack
+                    // if the new data will exceed the amount of available slack, reallocate the backing string to accomodate the
+                    // new value + slack
                     if (PreventReallocation)
                     {
                         throw new InvalidOperationException($"Number of characters to be added ({valueLengthDifference}) exceeds available slack ({Slack}) and PreventReallocation = true");
@@ -139,7 +90,7 @@
                 value.AsSpan().CopyTo(Text.Span.Slice(valueOffset.Start));
 
                 Slack -= valueLengthDifference;
-                
+
                 Span<Offset> off = stackalloc Offset[_headers.Count];
                 _offsets.Span.CopyTo(off);
 
@@ -158,5 +109,55 @@
         }
 
         public override string ToString() => Text.Span.Slice(0, Text.Length - Slack).ToString();
+
+        private void ComputeOffsets()
+        {
+            int len = Text.Length - Slack;
+
+            Span<char> span = stackalloc char[len];
+            Text.Span.Slice(0, len).CopyTo(span);
+
+            Span<Offset> offsets = stackalloc Offset[_headers.Count];
+
+            bool quoted = false;
+            int start = 0;
+            int offsetNum = 0;
+
+            for (int i = 0; i < len; i++)
+            {
+                switch (span[i])
+                {
+                    case ',':
+                        if (!quoted)
+                        {
+                            offsets[offsetNum] = new Offset(start, i - start);
+                            offsetNum++;
+                            start = i + 1;
+                        }
+                        break;
+
+                    case '\'':
+                    case '"':
+                        quoted = !quoted;
+                        break;
+                }
+            }
+
+            offsets[offsetNum] = new Offset(start, len - start);
+            offsets.CopyTo(_offsets.Span);
+        }
+
+        public struct Offset
+        {
+            public int Length;
+
+            public int Start;
+
+            public Offset(int start, int length)
+            {
+                Start = start;
+                Length = length;
+            }
+        }
     }
 }
