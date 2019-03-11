@@ -234,15 +234,15 @@ namespace LazyCsv.Tests
         public void Computes_Initial_Offsets_Properly(string[] strings)
         {
             var headers = new Dictionary<string, int>();
-            var offsets = new List<Offset>();
+            var offsets = new List<LazyCsvLine.Offset>();
 
             for (int i = 0; i < strings.Length; i++)
             {
                 headers.Add(strings[i], i);
 
-                var prev = i == 0 ? new Offset(-1, 0) : offsets[i - 1];
+                var prev = i == 0 ? new LazyCsvLine.Offset(-1, 0) : offsets[i - 1];
 
-                offsets.Add(new Offset(prev.Start + prev.Length + 1, strings[i].Length));
+                offsets.Add(new LazyCsvLine.Offset(prev.Start + prev.Length + 1, strings[i].Length));
             }
 
             var line = new LazyCsvLine(string.Join(",", strings), headers, 5, false);

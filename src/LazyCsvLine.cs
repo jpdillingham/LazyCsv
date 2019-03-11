@@ -4,20 +4,20 @@
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
 
-    public struct Offset
-    {
-        public Offset(int start, int length)
-        {
-            Start = start;
-            Length = length;
-        }
-
-        public int Start;
-        public int Length;
-    }
-
     public sealed class LazyCsvLine
     {
+        public struct Offset
+        {
+            public Offset(int start, int length)
+            {
+                Start = start;
+                Length = length;
+            }
+
+            public int Start;
+            public int Length;
+        }
+
         public Memory<char> Text { get; private set; }
 
         private readonly Dictionary<string, int> _headers;
