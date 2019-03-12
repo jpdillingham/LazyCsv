@@ -28,11 +28,21 @@ namespace LazyCsv
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
 
+    /// <summary>
+    ///     A lazily parsed line of CSV text.
+    /// </summary>
     public sealed class LazyCsvLine
     {
         private readonly Dictionary<string, int> _headers;
         private Memory<Offset> _offsets;
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="LazyCsvLine"/> class.
+        /// </summary>
+        /// <param name="text">The line text.</param>
+        /// <param name="headers">The headers from the file containing the line.</param>
+        /// <param name="slack">The amount of slack space to pre-allocate for line growth (default: 10%)</param>
+        /// <param name="preventReallocation">A value indicating whether the line should be allowed to grow beyond the allocated slack space, requiring a re-allocation.</param>
         public LazyCsvLine(string text, Dictionary<string, int> headers, int? slack = null, bool preventReallocation = false)
         {
             Slack = slack ?? (int)Math.Ceiling(text.Length * 0.1d); // default to 10% of string length
@@ -49,13 +59,41 @@ namespace LazyCsv
             ComputeOffsets();
         }
 
+        /// <summary>
+        ///     Gets the headers from the file containing the line.
+        /// </summary>
         public IReadOnlyDictionary<string, int> Headers => new ReadOnlyDictionary<string, int>(_headers);
+
+        /// <summary>
+        ///     Gets the initial amount of allocated slack space.
+        /// </summary>
         public int InitialSlack { get; }
+
+        /// <summary>
+        ///     Gets the positional offsets for each CSV column within the line.
+        /// </summary>
         public IEnumerable<Offset> Offsets => _offsets.ToArray();
+
+        /// <summary>
+        ///     Gets a value indicating whether the line should be allowed to grow beyond the allocated spack space, requiring a re-allocation.
+        /// </summary>
         public bool PreventReallocation { get; }
+
+        /// <summary>
+        ///     Gets the current amount of allocated slack space.
+        /// </summary>
         public int Slack { get; private set; }
+
+        /// <summary>
+        ///     Gets the line text.
+        /// </summary>
         public Memory<char> Text { get; private set; }
 
+        /// <summary>
+        ///     Returns the text contained within the offset corresponding to the specified <paramref name="column"/>.
+        /// </summary>
+        /// <param name="column">The name of the column for which the text is to be returned.</param>
+        /// <returns>The text contained within the offset corresponding to the specified <paramref name="column"/></returns>
         public string this[string column]
         {
             get
@@ -68,15 +106,20 @@ namespace LazyCsv
             }
         }
 
-        public string this[int i]
+        /// <summary>
+        ///     Returns the text contained within the specified <paramref name="offset"/>.
+        /// </summary>
+        /// <param name="offset">The offset of the column for which the text is to be returned.</param>
+        /// <returns>The text contained within the specified <paramref name="offset"/></returns>
+        public string this[int offset]
         {
             get
             {
-                return Text.Span.Slice(_offsets.Span[i].Start, _offsets.Span[i].Length).ToString();
+                return Text.Span.Slice(_offsets.Span[offset].Start, _offsets.Span[offset].Length).ToString();
             }
             set
             {
-                var valueOffset = _offsets.Span[i];
+                var valueOffset = _offsets.Span[offset];
                 var valueLengthDifference = value.Length - valueOffset.Length;
 
                 if (valueLengthDifference == 0)
@@ -118,14 +161,14 @@ namespace LazyCsv
                 Span<Offset> off = stackalloc Offset[_headers.Count];
                 _offsets.Span.CopyTo(off);
 
-                off[i].Length = valueOffset.Length += valueLengthDifference;
+                off[offset].Length = valueOffset.Length += valueLengthDifference;
 
                 var start = valueOffset.Start + valueOffset.Length + 1;
 
-                for (int j = i + 1; j < off.Length; j++)
+                for (int i = offset + 1; i < off.Length; i++)
                 {
-                    off[j].Start = start;
-                    start += off[j].Length + 1;
+                    off[i].Start = start;
+                    start += off[i].Length + 1;
                 }
 
                 off.CopyTo(_offsets.Span);
