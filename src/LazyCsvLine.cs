@@ -117,6 +117,7 @@ namespace LazyCsv
             {
                 return Text.Span.Slice(_offsets.Span[offset].Start, _offsets.Span[offset].Length).ToString();
             }
+
             set
             {
                 var valueOffset = _offsets.Span[offset];
@@ -201,6 +202,7 @@ namespace LazyCsv
                             offsetNum++;
                             start = i + 1;
                         }
+
                         break;
 
                     case '\'':

@@ -53,8 +53,8 @@
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
 
-                //Console.WriteLine($"Reading file...");
-                var file = new LazyCsvFile(@"c:\CUR\aws-cur-003.csv.gz", 10);
+                Console.WriteLine($"Reading file...");
+                var file = new LazyCsvFile(@"c:\CUR\bigfile.csv", 10);
                 //var lines = file.ReadAllLines();
                 //Console.WriteLine($"Done.");
 
@@ -138,7 +138,7 @@
                         }
                         lines++;
 
-                        writer.WriteLine(line);
+                        //writer.WriteLine(line);
                     }
                 }
 

@@ -22,15 +22,15 @@
     SOFTWARE.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.IO.Compression;
-using System.Linq;
-
 namespace LazyCsv
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.IO;
+    using System.IO.Compression;
+    using System.Linq;
+
     [Flags]
     public enum LazyCsvFileOptions
     {
