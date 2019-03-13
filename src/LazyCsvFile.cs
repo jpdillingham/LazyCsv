@@ -31,18 +31,33 @@ namespace LazyCsv
     using System.IO.Compression;
     using System.Linq;
 
+    /// <summary>
+    ///     LazyCsvFile options.
+    /// </summary>
     [Flags]
     public enum LazyCsvFileOptions
     {
+        /// <summary>
+        ///     None.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        ///     Decompress the input file regardless of whether the 'magic byte' is present.
+        /// </summary>
         ForceGZip = 1,
+
+        /// <summary>
+        ///     Prevent reallocation of line strings.
+        /// </summary>
         PreventLineReallocation = 2,
     }
 
-    public class LazyCsvFile : IDisposable
+    /// <summary>
+    ///     Simplifies reading of CSV files via <see cref="LazyCsvLine"/>.
+    /// </summary>
+    public sealed class LazyCsvFile : IDisposable
     {
-        private bool disposedValue = false;
-
         public LazyCsvFile(string file, int lineSlack)
             : this(file, lineSlack, LazyCsvFileOptions.None)
         {
@@ -72,16 +87,12 @@ namespace LazyCsv
         public IReadOnlyDictionary<string, int> Headers => new ReadOnlyDictionary<string, int>(HeaderDictionary);
         public int LineSlack { get; }
         public LazyCsvFileOptions Options { get; }
-        private Dictionary<string, int> HeaderDictionary { get; } = new Dictionary<string, int>();
-
+        private Dictionary<string, int> HeaderDictionary { get; }
         private CsvStreamReader Reader { get; set; }
 
-        // This code added to correctly implement the disposable pattern.
         public void Dispose()
         {
-            // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-            Dispose(true);
-            // TODO: uncomment the following line if the finalizer is overridden above. GC.SuppressFinalize(this);
+            Reader?.Dispose();
         }
 
         public IEnumerable<LazyCsvLine> ReadAllLines()
@@ -115,30 +126,9 @@ namespace LazyCsv
 
         public void ResetPosition() => Reader = new CsvStreamReader(File, Options);
 
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposedValue)
-            {
-                if (disposing)
-                {
-                    // TODO: dispose managed state (managed objects).
-                    Reader?.Dispose();
-                }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                // TODO: set large fields to null.
-
-                disposedValue = true;
-            }
-        }
-
-        // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources. ~LazyCsvFile() {
-        // // Do not change this code. Put cleanup code in Dispose(bool disposing) above. Dispose(false); }
-        private class CsvStreamReader : IDisposable
+        private sealed class CsvStreamReader : IDisposable
         {
             private readonly byte[] gzipFlags = new byte[] { 0x1F, 0x8B };
-
-            private bool disposedValue = false;
 
             public CsvStreamReader(string file, LazyCsvFileOptions options)
             {
@@ -159,30 +149,11 @@ namespace LazyCsv
             private FileStream FileStream { get; }
             private GZipStream GZipStream { get; }
 
-            // This code added to correctly implement the disposable pattern.
             public void Dispose()
             {
-                // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
-                Dispose(true);
-                // TODO: uncomment the following line if the finalizer is overridden above. GC.SuppressFinalize(this);
-            }
-
-            protected virtual void Dispose(bool disposing)
-            {
-                if (!disposedValue)
-                {
-                    if (disposing)
-                    {
-                        StreamReader?.Dispose();
-                        GZipStream?.Dispose();
-                        FileStream?.Dispose();
-                    }
-
-                    // TODO: free unmanaged resources (unmanaged objects) and override a finalizer below.
-                    // TODO: set large fields to null.
-
-                    disposedValue = true;
-                }
+                StreamReader?.Dispose();
+                GZipStream?.Dispose();
+                FileStream?.Dispose();
             }
 
             private bool IsGZipped(FileStream fileStream)
@@ -194,10 +165,6 @@ namespace LazyCsv
 
                 return fileFlags.AsSpan().SequenceEqual(gzipFlags.AsSpan());
             }
-
-            // To detect redundant calls
-            // TODO: override a finalizer only if Dispose(bool disposing) above has code to free unmanaged resources. ~CsvStream()
-            // { // Do not change this code. Put cleanup code in Dispose(bool disposing) above. Dispose(false); }
         }
     }
 }
