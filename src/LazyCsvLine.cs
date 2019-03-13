@@ -176,6 +176,10 @@ namespace LazyCsv
             }
         }
 
+        /// <summary>
+        ///     Returns the text of the line as a string.
+        /// </summary>
+        /// <returns>The text of the line as string.</returns>
         public override string ToString() => Text.Span.Slice(0, Text.Length - Slack).ToString();
 
         private void ComputeOffsets()
