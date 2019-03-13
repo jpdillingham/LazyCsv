@@ -58,16 +58,32 @@ namespace LazyCsv
     /// </summary>
     public sealed class LazyCsvFile : IDisposable
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="LazyCsvFile"/> class.
+        /// </summary>
+        /// <param name="file">The file containing the CSV to read.</param>
+        /// <param name="lineSlack">The amount of slack space for each line.</param>
         public LazyCsvFile(string file, int lineSlack)
             : this(file, lineSlack, LazyCsvFileOptions.None)
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="LazyCsvFile"/> class.
+        /// </summary>
+        /// <param name="file">The file containing the CSV to read.</param>
+        /// <param name="options">The reader options.</param>
         public LazyCsvFile(string file, LazyCsvFileOptions options)
             : this(file, 0, options)
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="LazyCsvFile"/> class.
+        /// </summary>
+        /// <param name="file">The file containing the CSV to read.</param>
+        /// <param name="lineSlack">The amount of slack space for each line.</param>
+        /// <param name="options">The reader options.</param>
         public LazyCsvFile(string file, int lineSlack, LazyCsvFileOptions options)
         {
             File = file;
@@ -82,19 +98,46 @@ namespace LazyCsv
             }
         }
 
+        /// <summary>
+        ///     Gets a value indicating whether the end of the file has been reached.
+        /// </summary>
         public bool EndOfFile => Reader?.StreamReader.EndOfStream ?? false;
+
+        /// <summary>
+        ///     Gets the file containing the CSV to read.
+        /// </summary>
         public string File { get; }
+
+        /// <summary>
+        ///     Gets the CSV file headers.
+        /// </summary>
         public IReadOnlyDictionary<string, int> Headers => new ReadOnlyDictionary<string, int>(HeaderDictionary);
+
+        /// <summary>
+        ///     Gets the amount of slack space for each line.
+        /// </summary>
         public int LineSlack { get; }
+
+        /// <summary>
+        ///     Gets the reader options.
+        /// </summary>
         public LazyCsvFileOptions Options { get; }
+
         private Dictionary<string, int> HeaderDictionary { get; }
         private CsvStreamReader Reader { get; set; }
 
+        /// <summary>
+        ///     Disposes of this <see cref="LazyCsvFile"/>.
+        /// </summary>
         public void Dispose()
         {
             Reader?.Dispose();
         }
 
+        /// <summary>
+        ///     Reads and returns all lines from the file into memory.
+        /// </summary>
+        /// <returns>The read lines.</returns>
         public IEnumerable<LazyCsvLine> ReadAllLines()
         {
             using (var csv = new CsvStreamReader(File, Options))
@@ -113,6 +156,10 @@ namespace LazyCsv
             }
         }
 
+        /// <summary>
+        ///     Reads and returns the next line from the file.
+        /// </summary>
+        /// <returns>The read line.</returns>
         public LazyCsvLine ReadLine()
         {
             if (Reader == null)
@@ -124,6 +171,9 @@ namespace LazyCsv
             return new LazyCsvLine(Reader.StreamReader.ReadLine(), HeaderDictionary, LineSlack, Options.HasFlag(LazyCsvFileOptions.PreventLineReallocation));
         }
 
+        /// <summary>
+        ///     Resets the current position in the file.
+        /// </summary>
         public void ResetPosition() => Reader = new CsvStreamReader(File, Options);
 
         private sealed class CsvStreamReader : IDisposable
