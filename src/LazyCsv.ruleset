@@ -74,4 +74,9 @@
   <Rules AnalyzerId="StyleCop.Analyzers" RuleNamespace="StyleCop.Analyzers">
     <Rule Id="SA1101" Action="None" />
   </Rules>
+  <Rules AnalyzerId="Microsoft.CodeQuality.Analyzers" RuleNamespace="Microsoft.CodeQuality.Analyzers">
+    <Rule Id="CA1051" Action="None" />
+    <Rule Id="CA1034" Action="None" />
+    <Rule Id="CA1815" Action="None" />
+  </Rules>
 </RuleSet>
