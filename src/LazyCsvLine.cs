@@ -34,7 +34,7 @@ namespace LazyCsv
     public sealed class LazyCsvLine
     {
         private readonly Dictionary<string, int> _headers;
-        private Memory<Offset> _offsets;
+        private readonly Memory<Offset> _offsets;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="LazyCsvLine"/> class.
@@ -216,12 +216,26 @@ namespace LazyCsv
             offsets.CopyTo(_offsets.Span);
         }
 
+        /// <summary>
+        ///     Offset values for a single CSV column.
+        /// </summary>
         public struct Offset
         {
+            /// <summary>
+            ///     The offset length.
+            /// </summary>
             public int Length;
 
+            /// <summary>
+            ///     The offset start.
+            /// </summary>
             public int Start;
 
+            /// <summary>
+            ///     Initializes a new instance of the <see cref="Offset"/> struct.
+            /// </summary>
+            /// <param name="start">The offset start.</param>
+            /// <param name="length">The offset length.</param>
             public Offset(int start, int length)
             {
                 Start = start;
